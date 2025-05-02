@@ -97,6 +97,19 @@ Replace the placeholder values with your Salesforce credentials:
 
 Your Salesforce credentials are stored securely and are only used to establish the connection to your org. We never store or share your credentials with third parties.
 
+## Contributing 👋 
+
+Thanks for being here! Whether you’re fixing a bug, adding a feature, or improving documentation — your help makes a big difference.
+
+Here’s how to get started:
+
+1. Check out our [Contributing Guidelines](CONTRIBUTING.md)
+2. Take a look at the open [Issues](https://github.com/salesforce-mcp/Salesforce-mcp/issues)
+3. Fork the repo and create your branch
+4. Open a pull request when you’re ready
+
+We appreciate your support and look forward to collaborating! 🚀
+
 ## Support 💬
 
 Need help? Visit our [documentation](https://salesforce-mcp.com/docs) or contact our support team at support@salesforce-mcp.com or in our Discord channel
