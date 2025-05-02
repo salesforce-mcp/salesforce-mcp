@@ -1,0 +1,148 @@
+import salesforcemcp.sfdc_client as sfdc_client
+import mcp.types as types
+import json
+
+def create_object_impl(sf_client: sfdc_client.OrgHandler, arguments: dict[str, str]):
+    name = arguments.get("name")
+    plural_name = arguments.get("plural_name")
+    api_name = arguments.get("api_name")
+    description = arguments.get("description")
+    fields = arguments.get("fields")
+
+    json_obj = {}
+    json_obj["name"] = name
+    json_obj["plural_name"] = plural_name
+    json_obj["api_name"] = api_name
+    json_obj["description"] = description
+    json_obj["fields"] = fields
+
+    if not sf_client.connection:
+        raise ValueError("Salesforce connection is not active. Cannot perform metadata deployment.")
+    sfdc_client.write_to_file(json.dumps(json_obj))
+    sfdc_client.create_metadata_package(json_obj)
+    sfdc_client.create_send_to_server(sf_client.connection)
+
+    return [
+        types.TextContent(
+            type="text",
+            text=f"Custom Object '{api_name}' creation package prepared and deployment initiated."
+        )
+    ]
+
+def delete_object_fields_impl(sf_client: sfdc_client.OrgHandler, arguments: dict[str, str]):
+    api_name = arguments.get("api_name")
+    fields = arguments.get("fields")
+
+    json_obj = {}
+    json_obj["api_name"] = api_name
+    json_obj["fields"] = fields
+
+    if not sf_client.connection:
+        raise ValueError("Salesforce connection is not active. Cannot perform metadata deployment.")
+    sfdc_client.delete_fields(json_obj)
+    sfdc_client.delete_send_to_server(sf_client.connection)
+
+    return [
+        types.TextContent(
+            type="text",
+            text=f"Delete Object fields on '{api_name}' creation package prepared and deployment initiated."
+        )
+    ]
+
+def create_tab_impl(sf_client: sfdc_client.OrgHandler, arguments: dict[str, str]):
+    args = arguments
+    tab_api_name = args.get("tab_api_name")
+    label = args.get("label")
+    motif = args.get("motif")
+    tab_type = args.get("tab_type")
+    object_name = args.get("object_name")
+    vf_page_name = args.get("vf_page_name")
+    web_url = args.get("web_url")
+    url_encoding_key = args.get("url_encoding_key", "UTF8")
+    description = args.get("description")
+
+    if not all([tab_api_name, label, motif, tab_type]):
+        raise ValueError("Missing required arguments: tab_api_name, label, motif, tab_type")
+
+    valid_types = ['CustomObject', 'VisualforcePage', 'Web']
+    if tab_type not in valid_types:
+        raise ValueError(f"Invalid tab_type: '{tab_type}'. Must be one of {valid_types}")
+    if tab_type == 'CustomObject' and not object_name:
+         raise ValueError("object_name is required when tab_type is 'CustomObject'")
+    if tab_type == 'CustomObject' and tab_api_name != object_name:
+         # This validation is also in sfdc_client, but good to have early check
+         raise ValueError("For CustomObject tabs, tab_api_name must match object_name")
+    if tab_type == 'VisualforcePage' and not vf_page_name:
+        raise ValueError("vf_page_name is required when tab_type is 'VisualforcePage'")
+    if tab_type == 'Web' and not web_url:
+        raise ValueError("web_url is required when tab_type is 'Web'")
+        
+    json_obj = {
+        "tab_api_name": tab_api_name,
+        "label": label,
+        "motif": motif,
+        "tab_type": tab_type,
+        "object_name": object_name, # Will be None if not provided
+        "vf_page_name": vf_page_name,
+        "web_url": web_url,
+        "url_encoding_key": url_encoding_key,
+        "description": description
+    }
+
+    if not sf_client.connection:
+        raise ValueError("Salesforce connection is not active. Cannot perform metadata deployment.")
+
+    try:
+        sfdc_client.create_tab_package(json_obj)
+        sfdc_client.create_send_to_server(sf_client.connection)
+        return [
+            types.TextContent(
+                type="text",
+                text=f"Custom Tab '{tab_api_name}' creation package prepared and deployment initiated."
+            )
+        ]
+    except Exception as e:
+        print(f"Error during Custom Tab creation/deployment: {e}")
+        raise ValueError(f"Failed to create or deploy Custom Tab '{tab_api_name}'. Error: {str(e)}")
+
+def create_custom_app_impl(sf_client: sfdc_client.OrgHandler, arguments: dict[str, str]):
+        api_name = arguments.get("api_name")
+        label = arguments.get("label")
+        nav_type = arguments.get("nav_type", "Standard")
+        tabs = arguments.get("tabs")
+        description = arguments.get("description")
+        header_color = arguments.get("header_color")
+        form_factors = arguments.get("form_factors", ["Small", "Large"])
+        setup_experience = arguments.get("setup_experience", "all")
+
+        if not all([api_name, label, isinstance(tabs, list)]):
+             raise ValueError("Missing required arguments: api_name, label, tabs (must be a list)")
+        if not api_name.replace("_", "").isalnum() or " " in api_name:
+             raise ValueError(f"Invalid api_name: '{api_name}'. Use only letters, numbers, and underscores.")
+             
+        json_obj = {
+            "api_name": api_name,
+            "label": label,
+            "nav_type": nav_type,
+            "tabs": tabs,
+            "description": description,
+            "header_color": header_color,
+            "form_factors": form_factors,
+            "setup_experience": setup_experience
+        }
+
+        if not sf_client.connection:
+            raise ValueError("Salesforce connection is not active. Cannot perform metadata deployment.")
+
+        try:
+            sfdc_client.create_custom_app_package(json_obj)
+            sfdc_client.create_send_to_server(sf_client.connection)
+            return [
+                types.TextContent(
+                    type="text",
+                    text=f"Custom Application '{api_name}' creation package prepared and deployment initiated."
+                )
+            ]
+        except Exception as e:
+            print(f"Error during Custom Application creation/deployment: {e}")
+            raise ValueError(f"Failed to create or deploy Custom Application '{api_name}'. Error: {str(e)}")

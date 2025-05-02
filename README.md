@@ -79,9 +79,9 @@ To use this connector locally, you'll need to configure it in your `claude_deskt
                 "salesforce"
             ],
             "env": {
-                "SALESFORCE_USERNAME": "YOUR_SALESFORCE_USERNAME",
-                "SALESFORCE_PASSWORD": "YOUR_SALESFORCE_PASSWORD",
-                "SALESFORCE_SECURITY_TOKEN": "YOUR_SALESFORCE_SECURITY_TOKEN"
+                "USERNAME": "YOUR_SALESFORCE_USERNAME",
+                "PASSWORD": "YOUR_SALESFORCE_PASSWORD",
+                "SECURITY_TOKEN": "YOUR_SALESFORCE_SECURITY_TOKEN"
             }
         }
     }
