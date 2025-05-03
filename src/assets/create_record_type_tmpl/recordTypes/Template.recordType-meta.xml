@@ -1,8 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<RecordType xmlns="http://soap.sforce.com/2006/04/metadata">
-    <fullName>##developer_name##</fullName>
-    <active>##is_active##</active>
-    <description>##description##</description>
-    <label>##record_type_name##</label>
-    <!-- Add picklistValues sections here if needed later -->
-</RecordType> 
