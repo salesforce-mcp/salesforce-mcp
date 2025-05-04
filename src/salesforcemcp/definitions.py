@@ -170,8 +170,145 @@ def get_tools():
                 },
                 "required": ["api_name", "label", "tabs"]
             },
-        )
+        ),
+        # --- Data Operations ---
+        types.Tool(
+            name="run_soql_query",
+            description="Executes a SOQL query against Salesforce.",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "query": {
+                        "type": "string",
+                        "description": "The SOQL query to execute (e.g., SELECT Id, Name FROM ObjectName LIMIT 10).",
+                        "examples": [
+                            "SELECT Id, Name FROM Account LIMIT 10",
+                            "SELECT Name, Amount FROM Opportunity WHERE CloseDate = THIS_YEAR ORDER BY Amount DESC NULLS LAST",
+                            "SELECT Subject, Status, Priority FROM Case WHERE IsClosed = false",
+                            "SELECT COUNT(Id) FROM Contact WHERE AccountId = '001...' "
+                        ]
+                    },
+                },
+                "required": ["query"]
+            }
+        ),
+        types.Tool(
+            name="run_sosl_search",
+            description="Executes a SOSL search against Salesforce.",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "search": {
+                        "type": "string",
+                        "description": "The SOSL search string (e.g., 'FIND {MyCompany} IN ALL FIELDS RETURNING Account(Id, Name)').",
+                        "examples": [
+                            "FIND {Acme} IN NAME FIELDS RETURNING Account(Name), Contact(FirstName, LastName)",
+                            "FIND {support@example.com} IN EMAIL FIELDS RETURNING Contact(Name, Email)",
+                            "FIND {SF*} IN ALL FIELDS LIMIT 20"
+                        ]
+                    },
+                },
+                "required": ["search"]
+            }
+        ),
+        types.Tool(
+            name="get_object_fields",
+            description="Retrieves detailed information about the fields of a specific Salesforce object, including their names, labels, data types, and other properties. This tool is useful for understanding the structure of an object and its fields, which can be essential for data integration, migration, or custom application development.",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "object_name": {
+                        "type": "string",
+                        "description": "The API name of the Salesforce object for which to retrieve field information. Examples of valid object names include 'Account', 'Contact', 'Opportunity', 'MyCustomObject__c', or any other custom or standard object in your Salesforce org.",
+                        "examples": [
+                            "Account",
+                            "Opportunity",
+                            "Lead",
+                            "My_Custom_Object__c"
+                        ]
+                    },
+                },
+                "required": ["object_name"]
+            }
+        ),
+        types.Tool(
+            name="create_record",
+            description="Creates a new record for a specified object.",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "object_name": {
+                        "type": "string",
+                        "description": "The API name of the object to create a record for (e.g., 'Account', 'Contact').",
+                        "examples": ["Account", "Lead", "Task"]
+                    },
+                    "data": {
+                        "type": "object",
+                        "description": "A dictionary containing the field API names and values for the new record.",
+                        "properties": {},
+                        "additionalProperties": True,
+                        "examples": [
+                            {"Name": "New Lead Inc.", "Company": "New Lead Company", "Status": "Open - Not Contacted"}, # For Lead
+                            {"Name": "Sample Account", "BillingStreet": "123 Main St", "BillingCity": "Anytown"}, # For Account
+                            {"Subject": "Follow up call", "Status": "Not Started", "Priority": "Normal"} # For Task
+                        ]
+                    }
+                },
+                "required": ["object_name", "data"]
+            }
+        ),
+        types.Tool(
+            name="update_record",
+            description="Updates an existing record specified by its ID.",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "object_name": {
+                        "type": "string",
+                        "description": "The API name of the object to update.",
+                        "examples": ["Contact", "Opportunity", "Case"]
+                    },
+                    "record_id": {
+                        "type": "string",
+                        "description": "The 15 or 18 character ID of the record to update.",
+                        "examples": ["003...", "006...", "500..."]
+                    },
+                    "data": {
+                        "type": "object",
+                        "description": "A dictionary containing the field API names and new values.",
+                        "properties": {},
+                        "additionalProperties": True,
+                        "examples": [
+                            {"Phone": "(555) 123-4567", "Title": "VP of Sales"}, # For Contact
+                            {"StageName": "Prospecting", "Probability": 10}, # For Opportunity
+                            {"Status": "Working", "Priority": "High"} # For Case
+                        ]
+                    }
+                },
+                "required": ["object_name", "record_id", "data"]
+            }
+        ),
+        types.Tool(
+            name="delete_record",
+            description="Deletes a record specified by its ID.",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "object_name": {
+                        "type": "string",
+                        "description": "The API name of the object to delete from.",
+                        "examples": ["Lead", "Task", "My_Temp_Object__c"]
+                    },
+                    "record_id": {
+                        "type": "string",
+                        "description": "The 15 or 18 character ID of the record to delete.",
+                        "examples": ["00Q...", "00T...", "a01..."]
+                    },
+                },
+                "required": ["object_name", "record_id"]
+            }
+        ),
     ]
-
+    
     return tools
 
