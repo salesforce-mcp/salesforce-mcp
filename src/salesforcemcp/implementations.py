@@ -1,6 +1,9 @@
 import salesforcemcp.sfdc_client as sfdc_client
+from salesforcemcp.sfdc_client import OrgHandler
 import mcp.types as types
 import json
+from simple_salesforce import SalesforceError
+from typing import Any
 
 def create_object_impl(sf_client: sfdc_client.OrgHandler, arguments: dict[str, str]):
     name = arguments.get("name")
@@ -146,3 +149,134 @@ def create_custom_app_impl(sf_client: sfdc_client.OrgHandler, arguments: dict[st
         except Exception as e:
             print(f"Error during Custom Application creation/deployment: {e}")
             raise ValueError(f"Failed to create or deploy Custom Application '{api_name}'. Error: {str(e)}")
+
+# --- Data Operations ---
+
+def run_soql_query_impl(sf_client: OrgHandler, arguments: dict[str, str]):
+    query = arguments.get("query")
+    if not query:
+        raise ValueError("Missing 'query' argument")
+    if not sf_client.connection:
+        raise ValueError("Salesforce connection not established.")
+    try:
+        results = sf_client.connection.query_all(query)
+        # Consider limits on result size? Truncate or summarize if too large?
+        return [
+            types.TextContent(
+                type="text",
+                text=f"SOQL Query Results (JSON):\\n{json.dumps(results, indent=2)}"
+            )
+        ]
+    except SalesforceError as e:
+        return [types.TextContent(type="text", text=f"SOQL Error: {e.status} {e.resource_name} {e.content}")]
+    except Exception as e:
+        return [types.TextContent(type="text", text=f"Error executing SOQL: {e}")]
+
+def run_sosl_search_impl(sf_client: OrgHandler, arguments: dict[str, str]):
+    search = arguments.get("search")
+    if not search:
+        raise ValueError("Missing 'search' argument")
+    if not sf_client.connection:
+        raise ValueError("Salesforce connection not established.")
+    try:
+        results = sf_client.connection.search(search)
+        return [
+            types.TextContent(
+                type="text",
+                text=f"SOSL Search Results (JSON):\\n{json.dumps(results, indent=2)}"
+            )
+        ]
+    except SalesforceError as e:
+        return [types.TextContent(type="text", text=f"SOSL Error: {e.status} {e.resource_name} {e.content}")]
+    except Exception as e:
+        return [types.TextContent(type="text", text=f"Error executing SOSL: {e}")]
+
+def get_object_fields_impl(sf_client: OrgHandler, arguments: dict[str, str]):
+    object_name = arguments.get("object_name")
+    if not object_name:
+        raise ValueError("Missing 'object_name' argument")
+    try:
+        # Use the caching method from OrgHandler
+        results = sf_client.get_object_fields_cached(object_name)
+        return [
+            types.TextContent(
+                type="text",
+                text=f"{object_name} Fields Metadata (JSON):\\n{json.dumps(results, indent=2)}"
+            )
+        ]
+    except Exception as e: # Catches errors from get_object_fields_cached
+         return [types.TextContent(type="text", text=f"Error getting fields for {object_name}: {e}")]
+
+def create_record_impl(sf_client: OrgHandler, arguments: dict[str, Any]): # Data can be complex
+    object_name = arguments.get("object_name")
+    data = arguments.get("data")
+    if not object_name or not data:
+        raise ValueError("Missing 'object_name' or 'data' argument")
+    if not sf_client.connection:
+        raise ValueError("Salesforce connection not established.")
+    if not isinstance(data, dict):
+         raise ValueError("'data' argument must be a dictionary/object.")
+    try:
+        sf_object = getattr(sf_client.connection, object_name)
+        results = sf_object.create(data)
+        # Result usually {'id': '...', 'success': True, 'errors': []}
+        return [
+            types.TextContent(
+                type="text",
+                text=f"Create {object_name} Record Result (JSON):\\n{json.dumps(results, indent=2)}"
+            )
+        ]
+    except SalesforceError as e:
+        return [types.TextContent(type="text", text=f"Create Record Error: {e.status} {e.resource_name} {e.content}")]
+    except AttributeError:
+         return [types.TextContent(type="text", text=f"Error: Object type '{object_name}' not found or accessible via API.")]
+    except Exception as e:
+        return [types.TextContent(type="text", text=f"Error creating {object_name} record: {e}")]
+
+def update_record_impl(sf_client: OrgHandler, arguments: dict[str, Any]):
+    object_name = arguments.get("object_name")
+    record_id = arguments.get("record_id")
+    data = arguments.get("data")
+    if not object_name or not record_id or not data:
+        raise ValueError("Missing 'object_name', 'record_id', or 'data' argument")
+    if not sf_client.connection:
+        raise ValueError("Salesforce connection not established.")
+    if not isinstance(data, dict):
+         raise ValueError("'data' argument must be a dictionary/object.")
+    try:
+        sf_object = getattr(sf_client.connection, object_name)
+        # Update returns status code (204 No Content on success)
+        status_code = sf_object.update(record_id, data)
+        success = 200 <= status_code < 300
+        message = f"Update {object_name} record {record_id}: Status Code {status_code} - {'Success' if success else 'Failed'}"
+        return [types.TextContent(type="text", text=message)]
+    except SalesforceError as e:
+        return [types.TextContent(type="text", text=f"Update Record Error: {e.status} {e.resource_name} {e.content}")]
+    except AttributeError:
+         return [types.TextContent(type="text", text=f"Error: Object type '{object_name}' not found or accessible via API.")]
+    except Exception as e:
+        return [types.TextContent(type="text", text=f"Error updating {object_name} record {record_id}: {e}")]
+
+def delete_record_impl(sf_client: OrgHandler, arguments: dict[str, str]):
+    object_name = arguments.get("object_name")
+    record_id = arguments.get("record_id")
+    if not object_name or not record_id:
+        raise ValueError("Missing 'object_name' or 'record_id' argument")
+    if not sf_client.connection:
+        raise ValueError("Salesforce connection not established.")
+    try:
+        sf_object = getattr(sf_client.connection, object_name)
+        # Delete returns status code (204 No Content on success)
+        status_code = sf_object.delete(record_id)
+        success = 200 <= status_code < 300
+        message = f"Delete {object_name} record {record_id}: Status Code {status_code} - {'Success' if success else 'Failed'}"
+        return [types.TextContent(type="text", text=message)]
+    except SalesforceError as e:
+        # Handle common delete errors (e.g., protected record)
+        return [types.TextContent(type="text", text=f"Delete Record Error: {e.status} {e.resource_name} {e.content}")]
+    except AttributeError:
+         return [types.TextContent(type="text", text=f"Error: Object type '{object_name}' not found or accessible via API.")]
+    except Exception as e:
+        return [types.TextContent(type="text", text=f"Error deleting {object_name} record {record_id}: {e}")]
+
+# --- End Data Operations ---
