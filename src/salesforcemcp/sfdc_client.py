@@ -36,201 +36,6 @@ def write_to_file(content):
     with open(f"{BASE_PATH}/mylog.txt", 'a') as f:
         f.write(content)
 
-def create_metadata_package(json_obj):
-
-    name = json_obj["name"]
-    plural_name = json_obj["plural_name"]
-    description = json_obj["description"]
-    api_name = json_obj["api_name"]
-    fields = json_obj["fields"]
-
-    try:
-        shutil.rmtree(f"{BASE_PATH}/current/")
-    except:
-        print("the current directory doesn't exist")
-
-    source = f"{BASE_PATH}/assets/create_object_tmpl/"
-    destination = f"{BASE_PATH}/current/"
-
-    shutil.copytree(source, destination)
-
-    old_name = f"{BASE_PATH}/current/objects/##api_name##.object"
-    new_name = f"{BASE_PATH}/current/objects/{api_name}.object"
-
-    os.rename(old_name, new_name)
-
-    with open(f"{BASE_PATH}/assets/field.tmpl", "r", encoding="utf-8") as file:
-        field_tmpl = file.read()
-
-    fields_str = ""
-
-    for field in fields:
-        f_name = field["label"]
-        f_type = field["type"]
-        type_def = ""
-        if f_type == "Text":
-            type_def = """
-    <type>Text</type>
-    <length>100</length>"""
-        else:
-            type_def = """<precision>18</precision>
-    <scale>0</scale>
-    <type>Number</type>"""
-
-        f_api_name = field["api_name"]
-        new_field = field_tmpl.replace("##api_name##", f_api_name)
-        new_field = new_field.replace("##name##", f_name)
-        new_field = new_field.replace("##type##", type_def)
-        fields_str = fields_str + new_field
-
-    with open(f"{BASE_PATH}/current/package.xml", "r", encoding="utf-8") as file:
-        pack_tmpl = file.read()
-
-    pack_tmpl = pack_tmpl.replace("##api_name##", api_name)
-
-    with open(f"{BASE_PATH}/current/package.xml", "w", encoding="utf-8") as file:
-        file.write(pack_tmpl)
-
-    obj_path = f"{BASE_PATH}/current/objects/{api_name}.object"
-
-    with open(obj_path, "r", encoding="utf-8") as file:
-        obj_tmpl = file.read()
-
-    obj_tmpl = obj_tmpl.replace("##description##", description)
-    obj_tmpl = obj_tmpl.replace("##name##", name)
-    obj_tmpl = obj_tmpl.replace("##plural_name##", plural_name)
-    obj_tmpl = obj_tmpl.replace("##fields##", fields_str)
-
-    with open(obj_path, "w", encoding="utf-8") as file:
-        file.write(obj_tmpl)
-
-def create_class_package(json_obj):
-
-    class_name = json_obj["class_name"]
-    class_body = json_obj["class_body"]
-
-    try:
-        shutil.rmtree(f"{BASE_PATH}/current/")
-    except FileNotFoundError:
-        print("The 'current' directory doesn't exist, proceeding.")
-    except Exception as e:
-        print(f"Error removing directory: {e}")
-        return  # Stop if we can't clear the directory
-
-    source = f"{BASE_PATH}/assets/create_class_tmpl/"
-    destination = f"{BASE_PATH}/current/"
-
-    try:
-        shutil.copytree(source, destination)
-    except Exception as e:
-        print(f"Error copying template directory: {e}")
-        return # Stop if template copying fails
-
-    old_cls_name = f"{destination}/classes/##class_name##.cls"
-    new_cls_name = f"{destination}/classes/{class_name}.cls"
-    old_meta_name = f"{destination}/classes/##class_name##.cls-meta.xml"
-    new_meta_name = f"{destination}/classes/{class_name}.cls-meta.xml"
-
-    try:
-        os.rename(old_cls_name, new_cls_name)
-        os.rename(old_meta_name, new_meta_name)
-    except OSError as e:
-        print(f"Error renaming template files: {e}")
-        return # Stop if renaming fails
-
-    # Update package.xml
-    package_path = f"{destination}/package.xml"
-    try:
-        with open(package_path, "r", encoding="utf-8") as file:
-            pack_tmpl = file.read()
-        pack_tmpl = pack_tmpl.replace("##class_name##", class_name)
-        with open(package_path, "w", encoding="utf-8") as file:
-            file.write(pack_tmpl)
-    except Exception as e:
-        print(f"Error processing package.xml: {e}")
-        return
-
-    try:
-        with open(new_cls_name, "w", encoding="utf-8") as file:
-            file.write(class_body) # Write the full body provided by the user
-    except Exception as e:
-        print(f"Error writing .cls file: {e}")
-        return
-
-    # Meta file doesn't have placeholders in the current template,
-    # but adding a read/write step in case it changes later.
-    try:
-        with open(new_meta_name, "r", encoding="utf-8") as file:
-            meta_tmpl = file.read()
-        with open(new_meta_name, "w", encoding="utf-8") as file:
-            file.write(meta_tmpl)
-    except Exception as e:
-        print(f"Error processing .cls-meta.xml file: {e}")
-        return
-
-def create_record_type_package(json_obj):
-    object_name = json_obj["object_name"]
-    record_type_name = json_obj["record_type_name"]
-    developer_name = json_obj["developer_name"]
-    description = json_obj.get("description", "")
-    is_active = json_obj["is_active"]
-
-    # Convert boolean to 'true'/'false' string for XML
-    active_str = str(is_active).lower()
-
-    try:
-        shutil.rmtree(f"{BASE_PATH}/current/")
-    except FileNotFoundError:
-        print("The 'current' directory doesn't exist, proceeding.")
-    except Exception as e:
-        print(f"Error removing directory: {e}")
-        return
-
-    source = f"{BASE_PATH}/assets/create_record_type_tmpl/"
-    destination = f"{BASE_PATH}/current/"
-
-    try:
-        shutil.copytree(source, destination)
-    except Exception as e:
-        print(f"Error copying template directory: {e}")
-        return
-
-    old_rt_name = f"{destination}/recordTypes/Template.recordType-meta.xml"
-    new_rt_name_dir = f"{destination}/recordTypes/"
-    new_rt_name_full = f"{new_rt_name_dir}/{object_name}.{developer_name}.recordType-meta.xml"
-
-    try:
-        os.makedirs(new_rt_name_dir, exist_ok=True)
-        os.rename(old_rt_name, new_rt_name_full)
-    except OSError as e:
-        print(f"Error renaming template file: {e}")
-        return
-
-    package_path = f"{destination}/package.xml"
-    full_member_name = f"{object_name}.{developer_name}"
-    try:
-        with open(package_path, "r", encoding="utf-8") as file:
-            pack_tmpl = file.read()
-        pack_tmpl = pack_tmpl.replace("##object_name##.##developer_name##", full_member_name)
-        with open(package_path, "w", encoding="utf-8") as file:
-            file.write(pack_tmpl)
-    except Exception as e:
-        print(f"Error processing package.xml: {e}")
-        return
-
-    try:
-        with open(new_rt_name_full, "r", encoding="utf-8") as file:
-            rt_tmpl = file.read()
-        rt_tmpl = rt_tmpl.replace("##developer_name##", developer_name)
-        rt_tmpl = rt_tmpl.replace("##is_active##", active_str)
-        rt_tmpl = rt_tmpl.replace("##description##", description)
-        rt_tmpl = rt_tmpl.replace("##record_type_name##", record_type_name)
-        with open(new_rt_name_full, "w", encoding="utf-8") as file:
-            file.write(rt_tmpl)
-    except Exception as e:
-        print(f"Error processing .recordType-meta.xml file: {e}")
-        return
-
 def zip_directory(filepath):
     source_directory = filepath
     output_zip_name = f"{BASE_PATH}/pack"
@@ -391,277 +196,6 @@ def delete_fields(json_obj):
     with open(f"{BASE_PATH}/current_delete/destructiveChanges.xml", "w", encoding="utf-8") as file:
         file.write(destructive)
 
-def create_report_folder_package(json_obj):
-    developer_name = json_obj["developer_name"]
-    folder_shares = json_obj.get("folder_shares", []) # Expect list of share dicts
-
-    # Basic validation
-    if not developer_name.replace("_", "").isalnum() or " " in developer_name:
-         print(f"Invalid developer_name: '{developer_name}'. Use only letters, numbers, and underscores.")
-         return
-
-    try:
-        shutil.rmtree(f"{BASE_PATH}/current/")
-    except FileNotFoundError:
-        print("The 'current' directory doesn't exist, proceeding.")
-    except Exception as e:
-        print(f"Error removing directory: {e}")
-        return
-
-    source = f"{BASE_PATH}/assets/create_report_folder_tmpl/"
-    destination = f"{BASE_PATH}/current/"
-
-    try:
-        shutil.copytree(source, destination)
-    except Exception as e:
-        print(f"Error copying template directory: {e}")
-        return
-
-    # Rename template file with .reportFolder-meta.xml suffix
-    old_folder_meta_name = f"{destination}/reports/Template.folder-meta.xml"
-    new_folder_meta_name = f"{destination}/reports/{developer_name}.reportFolder-meta.xml"
-
-    try:
-        os.makedirs(os.path.dirname(new_folder_meta_name), exist_ok=True)
-        if os.path.exists(old_folder_meta_name):
-             os.rename(old_folder_meta_name, new_folder_meta_name)
-        else:
-             print(f"Warning: Template file {old_folder_meta_name} not found, cannot rename.")
-             pass
-    except OSError as e:
-        print(f"Error preparing template file path: {e}")
-        return
-
-    # Update package.xml (Assuming package.xml template uses <name>Report</name>)
-    package_path = f"{destination}/package.xml"
-    try:
-        with open(package_path, "r", encoding="utf-8") as file:
-            pack_tmpl = file.read()
-        pack_tmpl = pack_tmpl.replace("##developer_name##", developer_name)
-        with open(package_path, "w", encoding="utf-8") as file:
-            file.write(pack_tmpl)
-    except Exception as e:
-        print(f"Error processing package.xml: {e}")
-        return
-
-    # --- Generate folderShares XML --- 
-    shares_xml_parts = []
-    for share in folder_shares:
-        access_level = share.get("accessLevel")
-        shared_to = share.get("sharedTo")
-        shared_to_type = share.get("sharedToType")
-        if all([access_level, shared_to, shared_to_type]):
-            shares_xml_parts.append("    <folderShares>")
-            shares_xml_parts.append(f"        <accessLevel>{access_level}</accessLevel>")
-            shares_xml_parts.append(f"        <sharedTo>{shared_to}</sharedTo>")
-            shares_xml_parts.append(f"        <sharedToType>{shared_to_type}</sharedToType>")
-            shares_xml_parts.append("    </folderShares>")
-        else:
-            print(f"Warning: Skipping invalid folder share definition: {share}")
-    shares_xml_string = "\n".join(shares_xml_parts)
-    # --- End Generate XML --- 
-
-    # --- Process the Report Folder Meta XML using the template --- 
-    try:
-        with open(new_folder_meta_name, "r", encoding="utf-8") as file:
-            folder_tmpl = file.read()
-
-        folder_tmpl = folder_tmpl.replace("##developer_name##", developer_name)
-        # Replace placeholder comment with actual shares XML
-        folder_tmpl = folder_tmpl.replace("<!-- ##folder_shares_placeholder## -->", shares_xml_string)
-
-        # Remove potentially empty lines left by placeholder replacement if no shares
-        folder_tmpl = "\n".join(line for line in folder_tmpl.splitlines() if line.strip())
-
-        with open(new_folder_meta_name, "w", encoding="utf-8") as file:
-            file.write(folder_tmpl)
-    except Exception as e:
-        print(f"Error processing .reportFolder-meta.xml file: {e}")
-        return
-
-def create_dashboard_folder_package(json_obj):
-    developer_name = json_obj["developer_name"]
-    folder_shares = json_obj.get("folder_shares", []) # Expect list of share dicts
-
-    # Basic validation
-    if not developer_name.replace("_", "").isalnum() or " " in developer_name:
-         print(f"Invalid developer_name: '{developer_name}'. Use only letters, numbers, and underscores.")
-         return
-
-    try:
-        shutil.rmtree(f"{BASE_PATH}/current/")
-    except FileNotFoundError:
-        print("The 'current' directory doesn't exist, proceeding.")
-    except Exception as e:
-        print(f"Error removing directory: {e}")
-        return
-
-    source = f"{BASE_PATH}/assets/create_dashboard_folder_tmpl/"
-    destination = f"{BASE_PATH}/current/"
-
-    try:
-        shutil.copytree(source, destination)
-    except Exception as e:
-        print(f"Error copying template directory: {e}")
-        return
-
-    # Rename template file with .dashboardFolder-meta.xml suffix
-    old_folder_meta_name = f"{destination}/dashboards/Template.folder-meta.xml"
-    new_folder_meta_name = f"{destination}/dashboards/{developer_name}.dashboardFolder-meta.xml"
-
-    try:
-        os.makedirs(os.path.dirname(new_folder_meta_name), exist_ok=True)
-        if os.path.exists(old_folder_meta_name):
-            os.rename(old_folder_meta_name, new_folder_meta_name)
-        else:
-            print(f"Warning: Template file {old_folder_meta_name} not found, cannot rename.")
-            pass
-    except OSError as e:
-        print(f"Error preparing template file path: {e}")
-        return
-
-    # Update package.xml (Assuming package.xml template uses <name>Dashboard</name>)
-    package_path = f"{destination}/package.xml"
-    try:
-        with open(package_path, "r", encoding="utf-8") as file:
-            pack_tmpl = file.read()
-        pack_tmpl = pack_tmpl.replace("##developer_name##", developer_name)
-        with open(package_path, "w", encoding="utf-8") as file:
-            file.write(pack_tmpl)
-    except Exception as e:
-        print(f"Error processing package.xml: {e}")
-        return
-
-    # --- Generate folderShares XML --- 
-    shares_xml_parts = []
-    for share in folder_shares:
-        access_level = share.get("accessLevel")
-        shared_to = share.get("sharedTo")
-        shared_to_type = share.get("sharedToType")
-        if all([access_level, shared_to, shared_to_type]):
-            shares_xml_parts.append("    <folderShares>")
-            shares_xml_parts.append(f"        <accessLevel>{access_level}</accessLevel>")
-            shares_xml_parts.append(f"        <sharedTo>{shared_to}</sharedTo>")
-            shares_xml_parts.append(f"        <sharedToType>{shared_to_type}</sharedToType>")
-            shares_xml_parts.append("    </folderShares>")
-        else:
-            print(f"Warning: Skipping invalid folder share definition: {share}")
-    shares_xml_string = "\n".join(shares_xml_parts)
-    # --- End Generate XML --- 
-
-    try:
-        with open(new_folder_meta_name, "r", encoding="utf-8") as file:
-            folder_tmpl = file.read()
-
-        folder_tmpl = folder_tmpl.replace("##developer_name##", developer_name)
-        # Replace placeholder comment with actual shares XML
-        folder_tmpl = folder_tmpl.replace("<!-- ##folder_shares_placeholder## -->", shares_xml_string)
-
-        folder_tmpl = "\n".join(line for line in folder_tmpl.splitlines() if line.strip())
-
-        with open(new_folder_meta_name, "w", encoding="utf-8") as file:
-            file.write(folder_tmpl)
-    except Exception as e:
-        print(f"Error processing .dashboardFolder-meta.xml file: {e}")
-        return
-
-def create_report_type_package(json_obj):
-    developer_name = json_obj["developer_name"]
-    label = json_obj["label"]
-    base_object = json_obj["base_object"]
-    description = json_obj.get("description", "")
-    sections = json_obj.get("sections", []) # Expects a list of section dicts
-
-    # --- Generate Sections XML --- 
-    sections_xml_parts = []
-    for section in sections:
-        section_label = section.get("label", "")
-        columns = section.get("columns", [])
-        
-        # --- Generate Columns XML for this section --- 
-        current_section_columns_xml = []
-        for column in columns:
-            field_name = column.get("field")
-            table_name = column.get("table")
-            if field_name and table_name:
-                 # Each column gets its own <columns> wrapper
-                 current_section_columns_xml.append(f"        <columns>")
-                 current_section_columns_xml.append(f"            <checkedByDefault>true</checkedByDefault>")
-                 current_section_columns_xml.append(f"            <field>{field_name}</field>")
-                 current_section_columns_xml.append(f"            <table>{table_name}</table>")
-                 current_section_columns_xml.append(f"        </columns>")
-            else:
-                print(f"Warning: Skipping invalid column definition in section '{section_label}': {column}")
-        # --- End Generate Columns XML ---
-
-        if current_section_columns_xml: # Only add section if it has valid columns
-            sections_xml_parts.append(f"    <sections>")
-            sections_xml_parts.extend(current_section_columns_xml) # Add the individual <columns> blocks
-            sections_xml_parts.append(f"        <masterLabel>{section_label}</masterLabel>")
-            sections_xml_parts.append(f"    </sections>")
-        else:
-             print(f"Warning: Skipping section '{section_label}' as it has no valid columns.")
-             
-    sections_xml_string = "\n".join(sections_xml_parts)
-    # --- End Generate Sections XML ---
-
-    try:
-        shutil.rmtree(f"{BASE_PATH}/current/")
-    except FileNotFoundError:
-        print("The 'current' directory doesn't exist, proceeding.")
-    except Exception as e:
-        print(f"Error removing directory: {e}")
-        return
-
-    source = f"{BASE_PATH}/assets/create_report_type_tmpl/"
-    destination = f"{BASE_PATH}/current/"
-
-    try:
-        shutil.copytree(source, destination)
-    except Exception as e:
-        print(f"Error copying template directory: {e}")
-        return
-
-    # Rename template file
-    old_rt_meta_name = f"{destination}/reportTypes/Template.reportType-meta.xml"
-    new_rt_meta_name = f"{destination}/reportTypes/{developer_name}.reportType-meta.xml"
-
-    try:
-        # Explicitly ensure the target directory exists
-        os.makedirs(os.path.dirname(new_rt_meta_name), exist_ok=True)
-        os.rename(old_rt_meta_name, new_rt_meta_name)
-    except OSError as e:
-        print(f"Error renaming template file: {e}")
-        return
-
-    # Update package.xml
-    package_path = f"{destination}/package.xml"
-    try:
-        with open(package_path, "r", encoding="utf-8") as file:
-            pack_tmpl = file.read()
-        pack_tmpl = pack_tmpl.replace("##developer_name##", developer_name)
-        with open(package_path, "w", encoding="utf-8") as file:
-            file.write(pack_tmpl)
-    except Exception as e:
-        print(f"Error processing package.xml: {e}")
-        return
-
-    # Update report type meta file (.reportType-meta.xml)
-    try:
-        with open(new_rt_meta_name, "r", encoding="utf-8") as file:
-            rt_tmpl = file.read()
-        
-        rt_tmpl = rt_tmpl.replace("##label##", label)
-        rt_tmpl = rt_tmpl.replace("##description##", description)
-        rt_tmpl = rt_tmpl.replace("##base_object##", base_object)
-        rt_tmpl = rt_tmpl.replace("##sections_xml##", sections_xml_string)
-        
-        with open(new_rt_meta_name, "w", encoding="utf-8") as file:
-            file.write(rt_tmpl)
-    except Exception as e:
-        print(f"Error processing .reportType-meta.xml file: {e}")
-        return
-
 def create_tab_package(json_obj):
     tab_api_name = json_obj["tab_api_name"]
     tab_type = json_obj["tab_type"]
@@ -776,132 +310,6 @@ def create_tab_package(json_obj):
         return
     # --- End Write XML ---
 
-def create_report_package(json_obj):
-    """Prepares a package to deploy a single report using parameters and a template.
-
-    Args:
-        json_obj (dict): Contains structured report parameters like report_name, 
-                         folder_name, display_name, report_type, format, 
-                         columns (list), groupings_down (list).
-    """
-    # Extract parameters
-    report_name = json_obj.get("report_name")
-    folder_name = json_obj.get("folder_name")
-    display_name = json_obj.get("display_name")
-    report_type = json_obj.get("report_type")
-    report_format = json_obj.get("format", "Tabular") # Default to Tabular
-    columns = json_obj.get("columns", [])
-    groupings_down = json_obj.get("groupings_down", [])
-
-    # Basic validation
-    if not all([report_name, folder_name, display_name, report_type, columns]):
-        print("Error: Missing required report parameters: report_name, folder_name, display_name, report_type, columns.")
-        return
-    if report_format not in ["Tabular", "Summary"]:
-         print(f"Error: Invalid format '{report_format}'. Only 'Tabular' and 'Summary' supported currently.")
-         return
-    if report_format == "Summary" and not groupings_down:
-         print("Error: 'groupings_down' are required for 'Summary' format reports.")
-         return
-    if report_format == "Tabular" and groupings_down:
-        print("Warning: 'groupings_down' provided but will be ignored for 'Tabular' format report.")
-        groupings_down = [] # Clear groupings for Tabular
-
-    # --- Prepare environment --- 
-    try:
-        shutil.rmtree(f"{BASE_PATH}/current/")
-    except FileNotFoundError:
-        print("The 'current' directory doesn't exist, proceeding.")
-    except Exception as e:
-        print(f"Error removing directory: {e}")
-        return
-
-    destination = f"{BASE_PATH}/current/"
-    os.makedirs(destination, exist_ok=True)
-
-    # --- Update package.xml --- 
-    package_template_path = f"{BASE_PATH}/assets/create_report_tmpl/package.xml"
-    package_dest_path = f"{destination}/package.xml"
-    try:
-        with open(package_template_path, "r", encoding="utf-8") as file:
-            pack_tmpl = file.read()
-        pack_tmpl = pack_tmpl.replace("##folder_name##", folder_name)
-        pack_tmpl = pack_tmpl.replace("##report_name##", report_name)
-        with open(package_dest_path, "w", encoding="utf-8") as file:
-            file.write(pack_tmpl)
-    except FileNotFoundError:
-         print(f"Error: package.xml template not found at {package_template_path}")
-         return
-    except Exception as e:
-        print(f"Error processing package.xml: {e}")
-        return
-
-    # --- Prepare Report XML using Template --- 
-    report_template_path = f"{BASE_PATH}/assets/create_report_tmpl/reports/Template.report-meta.xml"
-    report_folder_path = f"{destination}/reports/{folder_name}/"
-    report_file_path = f"{report_folder_path}/{report_name}.report-meta.xml"
-
-    try:
-        os.makedirs(report_folder_path, exist_ok=True)
-    except OSError as e:
-        print(f"Error creating report directory structure: {e}")
-        return
-
-    try:
-        with open(report_template_path, "r", encoding="utf-8") as file:
-            report_tmpl = file.read()
-
-        # Replace simple placeholders
-        report_tmpl = report_tmpl.replace("##display_name##", display_name)
-        report_tmpl = report_tmpl.replace("##report_type##", report_type)
-        report_tmpl = report_tmpl.replace("##format##", report_format)
-
-        # Generate columns XML
-        columns_xml_parts = []
-        for col_field in columns:
-            if isinstance(col_field, str) and col_field.strip(): # Basic check
-                columns_xml_parts.append(f"    <columns><field>{col_field.strip()}</field></columns>")
-            else:
-                 print(f"Warning: Skipping invalid column definition: {col_field}")
-        columns_xml_string = "\n".join(columns_xml_parts)
-        report_tmpl = report_tmpl.replace("<!-- ##columns_placeholder## -->", columns_xml_string)
-
-        # Generate groupings XML (only if format is Summary)
-        groupings_xml_string = ""
-        if report_format == "Summary":
-            groupings_xml_parts = []
-            for group_field in groupings_down:
-                 if isinstance(group_field, str) and group_field.strip():
-                      # Assuming default granularity and sort order for now
-                      groupings_xml_parts.append(f"    <groupingsDown>")
-                      groupings_xml_parts.append(f"        <dateGranularity>Day</dateGranularity>") # Hardcoded
-                      groupings_xml_parts.append(f"        <field>{group_field.strip()}</field>")
-                      groupings_xml_parts.append(f"        <sortOrder>Asc</sortOrder>") # Hardcoded
-                      groupings_xml_parts.append(f"    </groupingsDown>")
-                 else:
-                      print(f"Warning: Skipping invalid grouping definition: {group_field}")
-            groupings_xml_string = "\n".join(groupings_xml_parts)
-            
-        report_tmpl = report_tmpl.replace("<!-- ##groupings_down_placeholder## -->", groupings_xml_string)
-
-        # Placeholder for filters - replace with empty for now
-        report_tmpl = report_tmpl.replace("<!-- ##filters_placeholder## -->", "")
-
-        # Clean up potentially empty lines from removed placeholders
-        report_tmpl = "\n".join(line for line in report_tmpl.splitlines() if line.strip())
-
-        # Write the final XML
-        with open(report_file_path, "w", encoding="utf-8") as file:
-            file.write(report_tmpl)
-        print(f"Report XML generated and written to: {report_file_path}")
-
-    except FileNotFoundError:
-        print(f"Error: Report template not found at {report_template_path}")
-        return
-    except Exception as e:
-        print(f"Error processing report template or writing file: {e}")
-        return
-
 def create_custom_app_package(json_obj):
     """Prepares a package to deploy a single Custom Application.
 
@@ -1009,4 +417,72 @@ def create_custom_app_package(json_obj):
     except Exception as e:
         print(f"Error processing app template or writing file: {e}")
         return
+
+def create_metadata_package(json_obj):
+
+    name = json_obj["name"]
+    plural_name = json_obj["plural_name"]
+    description = json_obj["description"]
+    api_name = json_obj["api_name"]
+    fields = json_obj["fields"]
+
+    try:
+        shutil.rmtree(f"{BASE_PATH}/current/")
+    except:
+        print("the current directory doesn't exist")
+
+    source = f"{BASE_PATH}/assets/create_object_tmpl/"
+    destination = f"{BASE_PATH}/current/"
+
+    shutil.copytree(source, destination)
+
+    old_name = f"{BASE_PATH}/current/objects/##api_name##.object"
+    new_name = f"{BASE_PATH}/current/objects/{api_name}.object"
+
+    os.rename(old_name, new_name)
+
+    with open(f"{BASE_PATH}/assets/field.tmpl", "r", encoding="utf-8") as file:
+        field_tmpl = file.read()
+
+    fields_str = ""
+
+    for field in fields:
+        f_name = field["label"]
+        f_type = field["type"]
+        type_def = ""
+        if f_type == "Text":
+            type_def = """
+    <type>Text</type>
+    <length>100</length>"""
+        else:
+            type_def = """<precision>18</precision>
+    <scale>0</scale>
+    <type>Number</type>"""
+
+        f_api_name = field["api_name"]
+        new_field = field_tmpl.replace("##api_name##", f_api_name)
+        new_field = new_field.replace("##name##", f_name)
+        new_field = new_field.replace("##type##", type_def)
+        fields_str = fields_str + new_field
+
+    with open(f"{BASE_PATH}/current/package.xml", "r", encoding="utf-8") as file:
+        pack_tmpl = file.read()
+
+    pack_tmpl = pack_tmpl.replace("##api_name##", api_name)
+
+    with open(f"{BASE_PATH}/current/package.xml", "w", encoding="utf-8") as file:
+        file.write(pack_tmpl)
+
+    obj_path = f"{BASE_PATH}/current/objects/{api_name}.object"
+
+    with open(obj_path, "r", encoding="utf-8") as file:
+        obj_tmpl = file.read()
+
+    obj_tmpl = obj_tmpl.replace("##description##", description)
+    obj_tmpl = obj_tmpl.replace("##name##", name)
+    obj_tmpl = obj_tmpl.replace("##plural_name##", plural_name)
+    obj_tmpl = obj_tmpl.replace("##fields##", fields_str)
+
+    with open(obj_path, "w", encoding="utf-8") as file:
+        file.write(obj_tmpl)
 
