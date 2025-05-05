@@ -1,5 +1,9 @@
 # Salesforce MCP Connector 🚀
 
+**Must read -**
+**This is not an official Salesforce repository.**
+
+
 Welcome to the Salesforce Model Context Protocol server! 
 This MCP allows you to interact with your Salesforce data and metadata using natural language.
 
@@ -8,19 +12,23 @@ Get insights, Manage data, Configure the platform, create objects, fields, flows
 
 ## Quick Start ⚡
 
+
+https://github.com/user-attachments/assets/60c8a448-c953-4399-99b3-7c3a1c976aa7
+
+
 ### Option 1: Cloud Version (Recommended for Most Users) ☁️
 1. Visit [salesforce-mcp.com](https://salesforce-mcp.com)
 2. Click "Connect to Salesforce" and authenticate with your org
-3. Start chatting with your Salesforce data right away!
+3. Start chatting with your Salesforce data right away, be aware that its not an official Salesforce product!
 
 ### Option 2: Local Version (Recommended for Developers) 💻
 1. Follow the configuration steps below
 2. Set up your environment variables
 3. Use with your preferred MCP-compatible AI assistant
 
-## What You Can Do ✨
+## What You Can Do?  ✨
 
-Our connector empowers you to:
+ ## Work with your data
 
 1. **Ask Questions About Your Data** 🔍
    - Get insights about your Salesforce records
@@ -43,24 +51,34 @@ Our connector empowers you to:
      - "Create a new Account named 'Acme Corp' with industry 'Technology'"
      - "Update the phone number of Account 001xx000003DIloAAG to '555-0123'"
      - "Delete the Account with ID 001xx000003DIloAAG"
+     - "Create a new user"...
 
-5. **Work with Development Tools** 🛠️
-   - Access and manage your Salesforce development environment
-   - Example: "Show me all Apex classes in the org"
+## Work with your Metadata
+
+5. **Create objects and fields** 🛠️
+   - Access and manage your Salesforce Object Manager
+   - Example: "Create a new custom object named "Contract with 3 fields: Name, Id and type"
    - Perfect for developers and administrators
 
-6. **Use Custom Applications** 🔌
-   - Interact with your custom Salesforce applications
-   - Example: "Call the custom Apex REST endpoint '/MyCustomService' with parameters"
+6. **Delete objects fields** 🔌
+   - Interact with your custom Salesforce objects
+   - Example: "Delete the field type from the Contract object"
    - Seamlessly integrate with your existing solutions
 
-7. **Access Advanced Features** ⚙️
+7. **Create custom tabs and apps** ⚙️
    - Connect to any Salesforce API endpoint
    - Example: "Get the describe information for the Account object"
    - Unlock the full power of the Salesforce platform
 
-8. **And many more...** 🌟
-   - If you are missing any functionality feel free to request it on our Discord channel or do a PR yourself...
+8. **In Progress: Expanding Capabilities** 🚀
+   - We’re actively working on powerful new features to further streamline your Salesforce experience, including:
+     1. Flow automation and orchestration
+     2. Page Layouts
+     3. Validation rules
+     4. Reports and Dashboards
+     5. Simplified deployments
+     6. And many more...
+     
 
 ## Configuration ⚙️
 
@@ -75,7 +93,7 @@ To use this connector locally, you'll need to configure it in your `claude_deskt
             "command": "uvx",
             "args": [
                 "--from",
-                "mcp-salesforce-connector",
+                "salesforce-mcp",
                 "salesforce"
             ],
             "env": {
