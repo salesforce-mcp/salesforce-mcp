@@ -51,10 +51,36 @@ def get_tools():
         types.Tool(
             name="create_object",
             description="Create a new object in salesforce",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "name": {
+                        "type": "string",
+                        "description": "The name of the object to be created",
+                    },
+                    "plural_name": {
+                        "type": "string",
+                        "description": "The plural name of the object to be created",
+                    },
+                    "description": {
+                        "type": "string",
+                        "description": "The general description of the object purpose in a short sentence",
+                    },
+                    "api_name": {
+                        "type": "string",
+                        "description": "The api name of the object to be created finished with __c",
+                    },
+                },
+                "required": ["name" "plural_name", "api_name"], 
+            },
+        ),
+        types.Tool(
+            name="create_object_with_fields",
+            description="Create a new object in salesforce",
             inputSchema=createObjectSchema,
         ),
         types.Tool(
-            name="create_field",
+            name="create_custom_field",
             description="Add one or more fields in the specified custom object",
             inputSchema=createFieldSchema,
         ),

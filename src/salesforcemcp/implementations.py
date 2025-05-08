@@ -1,11 +1,51 @@
 import salesforcemcp.sfdc_client as sfdc_client
 from salesforcemcp.sfdc_client import OrgHandler
 import mcp.types as types
+from simple_salesforce import Salesforce
+from simple_salesforce.exceptions import SalesforceError# import metadata API helper classes
 import json
 from simple_salesforce import SalesforceError
 from typing import Any
 
 def create_object_impl(sf_client: sfdc_client.OrgHandler, arguments: dict[str, str]):
+    """Creates a new custom object via the Salesforce Tooling API using the simple-salesforce client."""
+    name = arguments.get("name")
+    plural_name = arguments.get("plural_name")
+    api_name = arguments.get("api_name")
+
+    if not sf_client.connection:
+        return types.CallToolResult(
+            content=[types.TextContent(type="text", text="Salesforce connection is not active. Cannot perform metadata deployment.")],
+            isError=True
+        )
+
+    mdapi=sf_client.connection.mdapi
+
+    custom_object = mdapi.CustomObject(
+    fullName = api_name,
+    label = name,
+    pluralLabel =plural_name,
+    nameField = mdapi.CustomField(
+        label = "Name",
+        type = mdapi.FieldType("Text")
+    ),
+    deploymentStatus = mdapi.DeploymentStatus("Deployed"),
+    sharingModel = mdapi.SharingModel("Read")
+)
+    try:
+        mdapi.CustomObject.create(custom_object)
+    except SalesforceError as e:
+        return types.CallToolResult(
+            content=[types.TextContent(type="text", text=f"Error creating custom object: {e}")],
+            isError=True
+        )
+
+    return types.CallToolResult(
+        content=[types.TextContent(type="text", text=f"Custom Object '{api_name}' created successfully")],
+        isError=True
+    )
+
+def create_object_with_fields_impl(sf_client: sfdc_client.OrgHandler, arguments: dict[str, str]):
     name = arguments.get("name")
     plural_name = arguments.get("plural_name")
     api_name = arguments.get("api_name")
