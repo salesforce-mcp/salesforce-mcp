@@ -206,6 +206,49 @@ def get_tools():
                 "required": ["api_name", "label", "tabs"]
             },
         ),
+        types.Tool(
+            name="create_report_folder",
+            description="Creates a new Report Folder in Salesforce via the Metadata API.",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "folder_api_name": {"type": "string", "description": "The API name of the report folder to create (no spaces).", "pattern": "^[A-Za-z0-9_]+$", "examples": ["My_Reports"]},
+                    "folder_label": {"type": "string", "description": "The display label for the report folder.", "examples": ["My Reports"]},
+                    "access_type": {"type": "string", "description": "The access type for the folder. Use 'Public' or 'Private'.", "enum": ["Public","Private"], "default": "Private"}
+                },
+                "required": ["folder_api_name","folder_label"]
+            }
+        ),
+        types.Tool(
+            name="create_dashboard_folder",
+            description="Creates a new Dashboard Folder in Salesforce via the REST API.",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "folder_api_name": {"type": "string", "description": "The API name of the dashboard folder to create (no spaces).", "pattern": "^[A-Za-z0-9_]+$", "examples": ["My_Dashboards"]},
+                    "folder_label": {"type": "string", "description": "The display label for the dashboard folder.", "examples": ["My Dashboards"]},
+                    "access_type": {"type": "string", "description": "The access type for the folder. Use 'Public' or 'Private'.", "enum": ["Public","Private"], "default": "Private"}
+                },
+                "required": ["folder_api_name","folder_label"]
+            }
+        ),
+        types.Tool(
+            name="create_validation_rule",
+            description="Creates a new Validation Rule on a specific object via the Tooling API.",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "object_name": {"type": "string", "description": "API name of the object to add the rule to (e.g., 'Account')."},
+                    "rule_name": {"type": "string", "description": "Developer name for the validation rule (no .report or folder).", "pattern": "^[A-Za-z][A-Za-z0-9_]*$"},
+                    "active": {"type": "boolean", "description": "Whether the rule is active.", "default": True},
+                    "description": {"type": "string", "description": "Longer description of the rule (optional)."},
+                    "error_condition_formula": {"type": "string", "description": "Formula that triggers the rule when true."},
+                    "error_message": {"type": "string", "description": "Error message shown when rule fires.", "maxLength": 255},
+                    "error_display_field": {"type": "string", "description": "Field to display the error on (optional)."}
+                },
+                "required": ["object_name", "rule_name", "error_condition_formula", "error_message"]
+            }
+        ),
         # --- Data Operations ---
         types.Tool(
             name="run_soql_query",

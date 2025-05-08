@@ -193,6 +193,74 @@ def create_custom_app_impl(sf_client: sfdc_client.OrgHandler, arguments: dict[st
             print(f"Error during Custom Application creation/deployment: {e}")
             raise ValueError(f"Failed to create or deploy Custom Application '{api_name}'. Error: {str(e)}")
 
+def create_report_folder_impl(sf_client: sfdc_client.OrgHandler, arguments: dict[str, str]):
+    """Creates a new Salesforce report folder by inserting a Folder record via the REST API."""
+    folder_api_name = arguments.get("folder_api_name")
+    folder_label = arguments.get("folder_label")
+    access_type = arguments.get("access_type", "Private")
+    if not folder_api_name or not folder_label:
+        return [types.TextContent(type="text", text="Missing 'folder_api_name' or 'folder_label'.")]
+    if not sf_client.connection:
+        raise ValueError("Salesforce connection is not active. Cannot create folder.")
+    data = {
+        "DeveloperName": folder_api_name,
+        "Name": folder_label,
+        "AccessType": access_type,
+        "Type": "Report"
+    }
+    try:
+        result = sf_client.connection.Folder.create(data)
+        if result.get("success"):
+            return [types.TextContent(
+                type="text",
+                text=(
+                    f"Report folder '{folder_label}' (API Name: {folder_api_name}) created successfully. "
+                    f"(Id: {result.get('id')})"
+                )
+            )]
+        else:
+            errors = "; ".join(result.get("errors", []))
+            return [types.TextContent(type="text", text=f"Failed to create folder: {errors}")]
+    except SalesforceError as e:
+        return [types.TextContent(type="text", text=f"Salesforce Error creating folder: {e.status} {e.content}")]
+    except Exception as e:
+        raise ValueError(f"Unexpected error creating folder: {e}")
+
+def create_dashboard_folder_impl(sf_client: sfdc_client.OrgHandler, arguments: dict[str, str]):
+    """Creates a new Salesforce dashboard folder by inserting a Folder record via the REST API."""
+    folder_api_name = arguments.get("folder_api_name")
+    folder_label = arguments.get("folder_label")
+    access_type = arguments.get("access_type", "Private")
+    # Validate inputs
+    if not folder_api_name or not folder_label:
+        return [types.TextContent(type="text", text="Missing 'folder_api_name' or 'folder_label'.")]
+    if not sf_client.connection:
+        raise ValueError("Salesforce connection is not active. Cannot create dashboard folder.")
+    # Prepare Folder record
+    data = {
+        "DeveloperName": folder_api_name,
+        "Name": folder_label,
+        "AccessType": access_type,
+        "Type": "Dashboard"
+    }
+    try:
+        result = sf_client.connection.Folder.create(data)
+        if result.get("success"):
+            return [types.TextContent(
+                type="text",
+                text=(
+                    f"Dashboard folder '{folder_label}' (API Name: {folder_api_name}) created successfully. "
+                    f"(Id: {result.get('id')})"
+                )
+            )]
+        else:
+            errors = "; ".join(result.get("errors", []))
+            return [types.TextContent(type="text", text=f"Failed to create dashboard folder: {errors}")]
+    except SalesforceError as e:
+        return [types.TextContent(type="text", text=f"Salesforce Error creating dashboard folder: {e.status} {e.content}")]
+    except Exception as e:
+        raise ValueError(f"Unexpected error creating dashboard folder: {e}")
+
 # --- Data Operations ---
 
 def run_soql_query_impl(sf_client: OrgHandler, arguments: dict[str, str]):

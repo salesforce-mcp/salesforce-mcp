@@ -50,6 +50,10 @@ async def handle_call_tool(name: str, arguments: dict[str, str]) -> list[types.T
         return sfmcpimpl.create_tab_impl(sf_client, arguments)
     elif name == "create_custom_app":
         return sfmcpimpl.create_custom_app_impl(sf_client, arguments)
+    elif name == "create_report_folder":
+        return sfmcpimpl.create_report_folder_impl(sf_client, arguments)
+    elif name == "create_dashboard_folder":
+        return sfmcpimpl.create_dashboard_folder_impl(sf_client, arguments)
     else:
         raise ValueError(f"Unknown tool: {name}")
 
