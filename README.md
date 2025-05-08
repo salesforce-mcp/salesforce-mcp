@@ -111,6 +111,44 @@ Replace the placeholder values with your Salesforce credentials:
 - `YOUR_SALESFORCE_PASSWORD`: Your Salesforce password
 - `YOUR_SALESFORCE_SECURITY_TOKEN`: Your Salesforce security token
 
+## Supported functions 📥
+
+## Supported Salesforce functions
+
+| Tool Name                | Description                                                                 | Required Input Fields                                  | Active |
+|--------------------------|-----------------------------------------------------------------------------|--------------------------------------------------------|--------|
+| create_object            | Create a new object in Salesforce                                           | name, plural_name, api_name                            | ✅     |
+| create_object_with_fields| Create a new object in Salesforce with fields                               | name, plural_name, api_name, fields                    | ✅     |
+| create_custom_field      | Add one or more fields in the specified custom object                       | name, plural_name, api_name, fields                    | ✅     |
+| delete_object_fields     | Delete fields in a Salesforce custom object                                 | api_name, fields                                       | ✅     |
+| create_tab               | Creates a new Custom Tab in Salesforce (Custom Object, VF Page, or Web)     | tab_api_name, label, motif, tab_type                   | ✅     |
+| create_custom_app        | Creates a new Lightning Custom Application                                  | api_name, label, tabs                                  | ✅     |
+| create_report_folder     | Creates a new Report Folder in Salesforce                                   | folder_api_name, folder_label                          | ✅     |
+| create_dashboard_folder  | Creates a new Dashboard Folder in Salesforce                                | folder_api_name, folder_label                          | ✅     |
+| run_soql_query           | Executes a SOQL query against Salesforce                                    | query                                                  | ✅     |
+| run_sosl_search          | Executes a SOSL search against Salesforce                                   | search                                                 | ✅     |
+| get_object_fields        | Retrieves detailed information about the fields of a Salesforce object      | object_name                                            | ✅     |
+| create_record            | Creates a new record for a specified object                                 | object_name, data                                      | ✅     |
+| update_record            | Updates an existing record specified by its ID                              | object_name, record_id, data                           | ✅     |
+| delete_record            | Deletes a record specified by its ID                                        | object_name, record_id                                 | ✅     |
+
+
+## Coming soon
+## Coming soon
+
+| Tool Name                   | Description                                              | Required Input Fields (typical)                        | Ready |
+|-----------------------------|----------------------------------------------------------|--------------------------------------------------------|--------|
+| create_validation_rule      | Creates a new Validation Rule on a specific object       | object_name, rule_name, error_condition_formula, error_message | ⬜     |
+| create_custom_metadata_type | Creates a new Custom Metadata Type                       | api_name, label, plural_name, fields                   | ⬜     |
+| create_report               | Creates or updates a Salesforce report                   | report_name, folder_name, report_type, columns         | ⬜     |
+| create_dashboard            | Creates a new Dashboard in Salesforce                    | dashboard_name, folder_name, components                | ⬜     |
+| create_report_type          | Creates a new Custom Report Type                         | developer_name, label, description, base_object, category, deployed | ⬜     |
+| create_full_app             | Creates a full Salesforce application (custom app)       | api_name, label, tabs                                  | ⬜     |
+| describe_object_with_api    | Describes a full Salesforce object                       | api_name                                               | ⬜     |
+| describe_relationship_fields| Detailed info about all relationship fields for an object|                                                        | ⬜     |
+| manage_debug_logs           | Manage debug logs for Salesforce users - enable, disable, or retrieve logs |                                                | ⬜     |
+
+
 ## Security Note 🔒
 
 Your Salesforce credentials are stored securely and are only used to establish the connection to your org. We never store or share your credentials with third parties.
