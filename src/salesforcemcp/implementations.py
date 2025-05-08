@@ -32,6 +32,9 @@ def create_object_impl(sf_client: sfdc_client.OrgHandler, arguments: dict[str, s
         )
     ]
 
+def create_field_impl(sf_client: sfdc_client.OrgHandler, arguments: dict[str, str]):
+    return create_object_impl(sf_client, arguments)
+
 def delete_object_fields_impl(sf_client: sfdc_client.OrgHandler, arguments: dict[str, str]):
     api_name = arguments.get("api_name")
     fields = arguments.get("fields")

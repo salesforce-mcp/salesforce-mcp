@@ -1,53 +1,62 @@
 import mcp.types as types
 
+createObjectSchema ={
+    "type": "object",
+    "properties": {
+        "name": {
+            "type": "string",
+            "description": "The name of the object to be created",
+        },
+        "plural_name": {
+            "type": "string",
+            "description": "The plural name of the object to be created",
+        },
+        "description": {
+            "type": "string",
+            "description": "The general description of the object purpose in a short sentence. Always provide a value",
+        },
+        "api_name": {
+            "type": "string",
+            "description": "The api name of the object to be created finished with __c",
+        },
+        "fields": {
+            "type": "array",
+            "description": "The fields of the object",
+            "properties": {
+                "type": {
+                    "type": "string",
+                    "enum": ["Text", "Number", "Lookup", "LongText"],
+                    "default": "Text",
+                    "description": "The type of the field",
+                 },
+                "label": {
+                    "type": "string",
+                    "description": "The display name of the field",
+                 },
+                "api_name": {
+                    "type": "string",
+                    "description": "The api_name of the field finished in __c",
+                 },
+            },
+            "additionalProperties": True,
+        },
+    },
+    "required": ["name" "plural_name", "api_name", "fields"],
+}
+
+createFieldSchema = createObjectSchema
+
 def get_tools():
     tools = [
         types.Tool(
             name="create_object",
             description="Create a new object in salesforce",
-            inputSchema={
-                "type": "object",
-                "properties": {
-                    "name": {
-                        "type": "string",
-                        "description": "The name of the object to be created",
-                    },
-                    "plural_name": {
-                        "type": "string",
-                        "description": "The plural name of the object to be created",
-                    },
-                    "description": {
-                        "type": "string",
-                        "description": "The general description of the object purpose in a short sentence",
-                    },
-                    "api_name": {
-                        "type": "string",
-                        "description": "The api name of the object to be created finished with __c",
-                    },
-                    "fields": {
-                        "type": "array",
-                        "description": "The fields of the object",
-                        "properties": {
-                            "type": {
-                                "type": "string",
-                                "enum": ["Text", "Number", "Lookup", "LongText"],
-                                "default": "Text",
-                                "description": "The type of the field",
-                             },
-                            "label": {
-                                "type": "string",
-                                "description": "The display name of the field",
-                             },
-                            "api_name": {
-                                "type": "string",
-                                "description": "The api_name of the field finished in __c",
-                             },
-                        },
-                        "additionalProperties": True,
-                    },
-                },
-                "required": ["name" "plural_name", "api_name", "fields"],
-            },
+            inputSchema=createObjectSchema,
+        ),
+        types.Tool(
+            name="create_field",
+            description="Add one or more fields in the specified custom object",
+            inputSchema=createFieldSchema,
         ),
         types.Tool(
             name="delete_object_fields",
