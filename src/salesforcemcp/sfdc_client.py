@@ -5,7 +5,7 @@ from simple_salesforce import Salesforce
 from typing import Optional, Any
 import xml.etree.ElementTree as ET
 
-BASE_PATH=os.getenv("BASE_PATH"),
+BASE_PATH = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 class OrgHandler:
     """Manages interactions and caching for a Salesforce org."""
@@ -420,69 +420,114 @@ def create_custom_app_package(json_obj):
 
 def create_metadata_package(json_obj):
 
-    name = json_obj["name"]
-    plural_name = json_obj["plural_name"]
-    description = json_obj["description"]
-    api_name = json_obj["api_name"]
-    fields = json_obj["fields"]
-
     try:
-        shutil.rmtree(f"{BASE_PATH}/current/")
-    except:
-        print("the current directory doesn't exist")
+        name = json_obj["name"]
+        plural_name = json_obj["plural_name"]
+        description = json_obj["description"]
+        api_name = json_obj["api_name"]
+        fields = json_obj["fields"]
 
-    source = f"{BASE_PATH}/assets/create_object_tmpl/"
-    destination = f"{BASE_PATH}/current/"
+        try:
+            shutil.rmtree(f"{BASE_PATH}/current/")
+        except:
+            print("the current directory doesn't exist")
 
-    shutil.copytree(source, destination)
+        source = f"{BASE_PATH}/assets/create_object_tmpl/"
+        destination = f"{BASE_PATH}/current/"
 
-    old_name = f"{BASE_PATH}/current/objects/##api_name##.object"
-    new_name = f"{BASE_PATH}/current/objects/{api_name}.object"
+        shutil.copytree(source, destination)
 
-    os.rename(old_name, new_name)
+        old_name = f"{BASE_PATH}/current/objects/##api_name##.object"
+        new_name = f"{BASE_PATH}/current/objects/{api_name}.object"
 
-    with open(f"{BASE_PATH}/assets/field.tmpl", "r", encoding="utf-8") as file:
-        field_tmpl = file.read()
+        os.rename(old_name, new_name)
 
-    fields_str = ""
+        with open(f"{BASE_PATH}/assets/field.tmpl", "r", encoding="utf-8") as file:
+            field_tmpl = file.read()
 
-    for field in fields:
-        f_name = field["label"]
-        f_type = field["type"]
-        type_def = ""
-        if f_type == "Text":
-            type_def = """
-    <type>Text</type>
-    <length>100</length>"""
-        else:
-            type_def = """<precision>18</precision>
-    <scale>0</scale>
-    <type>Number</type>"""
+        fields_str = ""
 
-        f_api_name = field["api_name"]
-        new_field = field_tmpl.replace("##api_name##", f_api_name)
-        new_field = new_field.replace("##name##", f_name)
-        new_field = new_field.replace("##type##", type_def)
-        fields_str = fields_str + new_field
+        for field in fields:
+            type_def = ""
 
-    with open(f"{BASE_PATH}/current/package.xml", "r", encoding="utf-8") as file:
-        pack_tmpl = file.read()
+            f_name = field["label"]
+            f_type = field["type"]
+            f_api_name = field["api_name"]
 
-    pack_tmpl = pack_tmpl.replace("##api_name##", api_name)
+            with open(f"{BASE_PATH}/check.txt", 'a') as f:
+                f.write("1")
 
-    with open(f"{BASE_PATH}/current/package.xml", "w", encoding="utf-8") as file:
-        file.write(pack_tmpl)
+            if f_type == "Text":
+                type_def = """<type>Text</type>
+                    <length>100</length>"""
+            else:
+                if f_type == "Picklist":
 
-    obj_path = f"{BASE_PATH}/current/objects/{api_name}.object"
+                    with open(f"{BASE_PATH}/check.txt", 'a') as f:
+                        f.write("2")
 
-    with open(obj_path, "r", encoding="utf-8") as file:
-        obj_tmpl = file.read()
+                    f_picklist_values = field["picklist_values"]
 
-    obj_tmpl = obj_tmpl.replace("##description##", description)
-    obj_tmpl = obj_tmpl.replace("##name##", name)
-    obj_tmpl = obj_tmpl.replace("##plural_name##", plural_name)
-    obj_tmpl = obj_tmpl.replace("##fields##", fields_str)
+                    picklist_values_str = ""
+                    for picklist_value in f_picklist_values:
+                        val = f"""<value>
+                                    <fullName>{picklist_value}</fullName>
+                                    <default>false</default>
+                                    <label>{picklist_value}</label>
+                                </value>
+                                """
+                        picklist_values_str = picklist_values_str + val
 
-    with open(obj_path, "w", encoding="utf-8") as file:
-        file.write(obj_tmpl)
+                    type_def = f"""
+                        <type>Picklist</type>
+                        <valueSet>
+                            <restricted>true</restricted>
+                            <valueSetDefinition>
+                                <sorted>false</sorted>
+                                {picklist_values_str}
+                            </valueSetDefinition>
+                        </valueSet>
+                        """
+                else:
+                    with open(f"{BASE_PATH}/check.txt", 'a') as f:
+                        f.write("4")
+                    type_def = """<precision>18</precision>
+                        <scale>0</scale>
+                        <type>Number</type>"""
+
+            new_field = field_tmpl.replace("##api_name##", f_api_name)
+            new_field = new_field.replace("##name##", f_name)
+            new_field = new_field.replace("##type##", type_def)
+            fields_str = fields_str + new_field
+
+        with open(f"{BASE_PATH}/current/package.xml", "r", encoding="utf-8") as file:
+            pack_tmpl = file.read()
+
+        pack_tmpl = pack_tmpl.replace("##api_name##", api_name)
+
+        with open(f"{BASE_PATH}/current/package.xml", "w", encoding="utf-8") as file:
+            file.write(pack_tmpl)
+
+        obj_path = f"{BASE_PATH}/current/objects/{api_name}.object"
+
+        with open(obj_path, "r", encoding="utf-8") as file:
+            obj_tmpl = file.read()
+
+        if description is None:
+            description = ""
+
+        obj_tmpl = obj_tmpl.replace("##description##", description)
+        obj_tmpl = obj_tmpl.replace("##name##", name)
+        obj_tmpl = obj_tmpl.replace("##plural_name##", plural_name)
+        obj_tmpl = obj_tmpl.replace("##fields##", fields_str)
+
+        with open(obj_path, "w", encoding="utf-8") as file:
+            file.write(obj_tmpl)
+
+    except Exception as e:
+        err_msg = f"An error occurred: {e}"
+        with open(f"{BASE_PATH}/check.txt", 'a') as f:
+            f.write(err_msg)
+
+
 

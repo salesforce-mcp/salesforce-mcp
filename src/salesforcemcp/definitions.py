@@ -5,15 +5,15 @@ createObjectSchema ={
     "properties": {
         "name": {
             "type": "string",
-            "description": "The name of the object to be created",
+            "description": "The name of the object to be created. Fill always a value",
         },
         "plural_name": {
             "type": "string",
-            "description": "The plural name of the object to be created",
+            "description": "The plural name of the object to be created. Fill always a value",
         },
         "description": {
             "type": "string",
-            "description": "The general description of the object purpose in a short sentence. Always provide a value",
+            "description": "The general description of the object purpose in a short sentence. Fill always a value",
         },
         "api_name": {
             "type": "string",
@@ -25,7 +25,7 @@ createObjectSchema ={
             "properties": {
                 "type": {
                     "type": "string",
-                    "enum": ["Text", "Number", "Lookup", "LongText"],
+                    "enum": ["Text", "Number", "Lookup", "LongText", "Picklist", "Checkbox"],
                     "default": "Text",
                     "description": "The type of the field",
                  },
@@ -37,11 +37,16 @@ createObjectSchema ={
                     "type": "string",
                     "description": "The api_name of the field finished in __c",
                  },
+                "picklist_values": {
+                    "type": "array",
+                    "description": "The values of the field when the type is picklist",
+                    "items": {"type": "string"},
+                }
             },
             "additionalProperties": True,
         },
     },
-    "required": ["name" "plural_name", "api_name", "fields"],
+    "required": ["name" "plural_name", "api_name", "description", "fields"],
 }
 
 createFieldSchema = createObjectSchema
