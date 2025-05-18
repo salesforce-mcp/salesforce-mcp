@@ -84,17 +84,27 @@ https://github.com/user-attachments/assets/60c8a448-c953-4399-99b3-7c3a1c976aa7
 
 ### For Local Installation
 
-To use this connector locally, you'll need to configure it in your `claude_desktop_config.json` file. Add the following to the `mcpServers` section:
+First install the server. To do that execute the follwing commands:
+
+```sh
+git clone https://github.com/salesforce-mcp/salesforce-mcp.git
+cd salesforce-mcp
+uv venv
+uv pip install -e .
+```
+
+Then, to use this connector locally, you'll need to configure it in your `claude_desktop_config.json` file. Add the following to the `mcpServers` section:
 
 ```json
 {
     "mcpServers": {
         "salesforce": {
-            "command": "uvx",
+            "command": "uv",
             "args": [
-                "--from",
-                "salesforce-mcp",
-                "salesforce"
+                "--directory",
+                "[REPO_CLONE_PATH]/salesforce-mcp/src",
+                "run",
+                "server.py"
             ],
             "env": {
                 "USERNAME": "YOUR_SALESFORCE_USERNAME",
@@ -103,8 +113,9 @@ To use this connector locally, you'll need to configure it in your `claude_deskt
             }
         }
     }
-}
 ```
+
+Make sure to point to the local directory where the repo has been cloned and change that value for the **REPO_CLONE_PATH** 
 
 Replace the placeholder values with your Salesforce credentials:
 - `YOUR_SALESFORCE_USERNAME`: Your Salesforce username

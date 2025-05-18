@@ -1,0 +1,16 @@
+[project]
+name = "salesforce-mcp"
+version = "0.1.0"
+description = "salesforce-mcp runner"
+authors = [{ name = "Salesforce MCP", email = "salesforce.mcp.2@gmail.com" }]
+dependencies = [
+    "mcp",
+    "simple-salesforce",
+    "python-dotenv",
+]
+
+[project.scripts]
+salesforce = "server:main"
+
+[tool.uv]
+src = "src"
