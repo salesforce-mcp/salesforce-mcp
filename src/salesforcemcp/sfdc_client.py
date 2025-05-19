@@ -1,11 +1,20 @@
 import shutil
 import os
 import base64
+import zipfile
 from simple_salesforce import Salesforce
 from typing import Optional, Any
 import xml.etree.ElementTree as ET
 
 BASE_PATH = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+DEPLOY_DIR = "deployment_package"
+
+def _clean_deploy_dir():
+    """Removes and recreates the deployment directory."""
+    deploy_path = os.path.join(BASE_PATH, DEPLOY_DIR)
+    if os.path.exists(deploy_path):
+        shutil.rmtree(deploy_path)
+    os.makedirs(deploy_path, exist_ok=True)
 
 class OrgHandler:
     """Manages interactions and caching for a Salesforce org."""
@@ -530,4 +539,113 @@ def create_metadata_package(json_obj):
             f.write(err_msg)
 
 
+def create_custom_metadata_type_package(json_obj):
+    """Prepares the deployment package for a new Custom Metadata Type."""
+    # 1. Clean and prepare deploy directory
+    _clean_deploy_dir()
+    api_name = json_obj.get("api_name")
+    label = json_obj.get("name")
+    plural_name = json_obj.get("plural_name")
+    description = json_obj.get("description", "")
+    fields = json_obj.get("fields", [])
+    # 2. Copy custom metadata type template
+    source_dir = os.path.join(BASE_PATH, "assets", "create_custom_metadata_type_tmpl")
+    deploy_dir = os.path.join(BASE_PATH, DEPLOY_DIR)
+    os.makedirs(deploy_dir, exist_ok=True)
+    shutil.copytree(source_dir, deploy_dir, dirs_exist_ok=True)
+    # 3. Process package.xml
+    pkg_path = os.path.join(deploy_dir, "package.xml")
+    with open(pkg_path, "r", encoding="utf-8") as f:
+        pkg = f.read()
+    pkg = pkg.replace("##api_name##", api_name)
+    with open(pkg_path, "w", encoding="utf-8") as f:
+        f.write(pkg)
+    # 4. Rename object file
+    tmpl_obj = os.path.join(deploy_dir, "objects", "##api_name##.object")
+    final_obj = os.path.join(deploy_dir, "objects", f"{api_name}.object")
+    os.rename(tmpl_obj, final_obj)
+    # 5. Build fields XML
+    with open(os.path.join(BASE_PATH, "assets", "field.tmpl"), "r", encoding="utf-8") as f:
+        field_tmpl = f.read()
+    fields_str = ""
+    for field in fields:
+        f_api = field.get("api_name")
+        f_label = field.get("label")
+        f_type = field.get("type")
+        # Determine type definition
+        if f_type == "Text":
+            type_def = "<type>Text</type><length>100</length>"
+        elif f_type == "Number":
+            type_def = "<type>Number</type><precision>18</precision><scale>0</scale>"
+        elif f_type == "Checkbox":
+            default_val = field.get("defaultValue", False)
+            type_def = f"<type>Checkbox</type><defaultValue>{str(default_val).lower()}</defaultValue>"
+        elif f_type == "Date":
+            type_def = "<type>Date</type>"
+        elif f_type == "Picklist":
+            # Build picklist valueSet from provided 'values' list
+            values = field.get("values", [])
+            if not values:
+                raise ValueError(f"Picklist field '{f_api}' requires a 'values' list in the JSON.")
+            values_xml = ""
+            for val in values:
+                if isinstance(val, dict):
+                    full_name = val.get("fullName", val.get("label"))
+                    default_flag = str(val.get("default", False)).lower()
+                else:
+                    full_name = val
+                    default_flag = "false"
+                values_xml += (
+                    "<value>"
+                    f"<fullName>{full_name}</fullName>"
+                    f"<default>{default_flag}</default>"
+                    "</value>"
+                )
+            type_def = (
+                "<type>Picklist</type>"
+                "<valueSet>"
+                "<valueSetDefinition><sorted>false</sorted>"
+                f"{values_xml}"
+                "</valueSetDefinition>"
+                "</valueSet>"
+            )
+        else:
+            type_def = f"<type>{f_type}</type>"
+        # Render field XML
+        new_field = field_tmpl.replace("##api_name##", f_api)
+        new_field = new_field.replace("##name##", f_label)
+        new_field = new_field.replace("##type##", type_def)
+        fields_str += new_field
+    # 6. Inject into object file
+    with open(final_obj, "r", encoding="utf-8") as f:
+        obj_txt = f.read()
+    obj_txt = obj_txt.replace("##description##", description)
+    obj_txt = obj_txt.replace("##name##", label)
+    obj_txt = obj_txt.replace("##plural_name##", plural_name)
+    obj_txt = obj_txt.replace("##fields##", fields_str)
+    with open(final_obj, "w", encoding="utf-8") as f:
+        f.write(obj_txt)
 
+def deploy_package_from_deploy_dir(sf):
+    """Zips the DEPLOY_DIR and deploys it via the Metadata API."""
+    deploy_dir_path = os.path.join(BASE_PATH, DEPLOY_DIR)
+    if not os.path.exists(deploy_dir_path):
+        raise FileNotFoundError(f"Deployment directory not found: {deploy_dir_path}")
+
+    # Zip only the contents of the deployment directory (no parent folder)
+    zip_path = os.path.join(BASE_PATH, "deploy_package.zip")
+    # Remove old zip if present
+    if os.path.exists(zip_path):
+        os.remove(zip_path)
+    # Create new zip with contents at the root
+    with zipfile.ZipFile(zip_path, 'w', zipfile.ZIP_DEFLATED) as zf:
+        for root, dirs, files in os.walk(deploy_dir_path):
+            for file in files:
+                abs_file = os.path.join(root, file)
+                # Compute path relative to deploy_dir_path
+                rel_path = os.path.relpath(abs_file, deploy_dir_path)
+                zf.write(abs_file, rel_path)
+
+    # Encode and deploy
+    b64 = binary_to_base64(zip_path)
+    deploy(b64, sf)

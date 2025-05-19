@@ -151,6 +151,39 @@ def create_tab_impl(sf_client: sfdc_client.OrgHandler, arguments: dict[str, str]
         print(f"Error during Custom Tab creation/deployment: {e}")
         raise ValueError(f"Failed to create or deploy Custom Tab '{tab_api_name}'. Error: {str(e)}")
 
+def create_custom_metadata_type_impl(sf_client: sfdc_client.OrgHandler, arguments: dict[str, str]):
+    """Creates a new Custom Metadata Type via the Metadata API."""
+    api_name = arguments.get("api_name")
+    label = arguments.get("label")
+    plural_name = arguments.get("plural_name")
+    description = arguments.get("description", "")
+    fields = arguments.get("fields")
+
+    # Validate required inputs
+    missing = []
+    for arg in ("api_name", "label", "plural_name", "fields"):
+        if not arguments.get(arg):
+            missing.append(arg)
+    if missing:
+        return [types.TextContent(type="text", text=f"Missing required argument(s): {', '.join(missing)}")]
+
+    if not sf_client.connection:
+        raise ValueError("Salesforce connection not active. Cannot deploy custom metadata type.")
+
+    # Prepare and deploy metadata package for Custom Metadata Type
+    json_obj = {
+        "name": label,
+        "plural_name": plural_name,
+        "description": description,
+        "api_name": api_name,
+        "fields": fields
+    }
+    # Use the Custom Metadata Type package generator
+    sfdc_client.create_custom_metadata_type_package(json_obj)
+    # Deploy the prepared package (deployment_package) via the Metadata API
+    sfdc_client.deploy_package_from_deploy_dir(sf_client.connection)
+    return [types.TextContent(type="text", text=f"Custom Metadata Type '{api_name}' creation package prepared and deployment initiated.")]
+
 def create_custom_app_impl(sf_client: sfdc_client.OrgHandler, arguments: dict[str, str]):
         api_name = arguments.get("api_name")
         label = arguments.get("label")
@@ -390,4 +423,4 @@ def delete_record_impl(sf_client: OrgHandler, arguments: dict[str, str]):
     except Exception as e:
         return [types.TextContent(type="text", text=f"Error deleting {object_name} record {record_id}: {e}")]
 
-# --- End Data Operations ---
+

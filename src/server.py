@@ -40,12 +40,16 @@ async def handle_list_tools() -> list[types.Tool]:
 async def handle_call_tool(name: str, arguments: dict[str, str]) -> list[types.TextContent]:
     if name == "create_object":
         return sfmcpimpl.create_object_impl(sf_client, arguments)
-    if name == "create_object_with_fields":
+    elif name == "create_object_with_fields":
         return sfmcpimpl.create_object_with_fields_impl(sf_client, arguments)
-    if name == "create_custom_field":
+    elif name == "create_custom_field":
         return sfmcpimpl.create_object_with_fields_impl(sf_client, arguments)
     elif name == "delete_object_fields":
         return sfmcpimpl.delete_object_fields_impl(sf_client, arguments)
+    elif name == "create_custom_metadata_type":
+        return sfmcpimpl.create_custom_metadata_type_impl(sf_client, arguments)
+    elif name == "create_custom_metadata_field":
+        return sfmcpimpl.create_custom_metadata_type_impl(sf_client, arguments)
     elif name == "create_tab":
         return sfmcpimpl.create_tab_impl(sf_client, arguments)
     elif name == "create_custom_app":

@@ -49,6 +49,32 @@ createObjectSchema ={
     "required": ["name" "plural_name", "api_name", "description", "fields"],
 }
 
+createCustomMetadataSchema ={
+    "type": "object",
+    "properties": {
+        "api_name": {"type": "string", "pattern": "^[A-Za-z0-9_]+__mdt$", "description": "API name of the Custom Metadata Type (must end with __mdt)."},
+        "label": {"type": "string", "description": "Label for the Custom Metadata Type."},
+        "plural_name": {"type": "string", "description": "Plural label for the Custom Metadata Type."},
+        "description": {"type": "string", "description": "Description of the Custom Metadata Type."},
+        "fields": {
+            "type": "array",
+            "description": "List of fields for the Custom Metadata Type.",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "type": {"type": "string", "enum": ["Text", "Number", "Checkbox", "Date", "Picklist"], "default": "Text", "description": "Field data type."},
+                    "label": {"type": "string", "description": "Field label."},
+                    "api_name": {"type": "string", "description": "Field API name (must end with __c for custom metadata fields)."}
+                },
+                "required": ["type", "label", "api_name"]
+            }
+        }
+    },
+    "required": ["api_name", "label", "plural_name", "fields"]
+}
+
+createCustomMetadataFieldSchema = createCustomMetadataSchema
+
 createFieldSchema = createObjectSchema
 
 def get_tools():
@@ -112,6 +138,16 @@ def get_tools():
                 },
                 "required": ["api_name", "fields"],
             },
+        ),
+        types.Tool(
+            name="create_custom_metadata_type",
+            description="Creates a new Custom Metadata Type via the Metadata API.",
+            inputSchema=createCustomMetadataSchema
+        ),
+        types.Tool(
+            name="create_custom_metadata_field",
+            description="Creates a new field in an existing Custom Metadata Type via the Metadata API.",
+            inputSchema=createCustomMetadataFieldSchema
         ),
         types.Tool(
             name="create_tab",
