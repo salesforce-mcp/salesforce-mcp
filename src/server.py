@@ -58,6 +58,23 @@ async def handle_call_tool(name: str, arguments: dict[str, str]) -> list[types.T
         return sfmcpimpl.create_report_folder_impl(sf_client, arguments)
     elif name == "create_dashboard_folder":
         return sfmcpimpl.create_dashboard_folder_impl(sf_client, arguments)
+
+    # --- Standard Data Tool Implementations --- 
+    elif name == "run_soql_query":
+        return sfmcpimpl.run_soql_query_impl(sf_client, arguments)
+    elif name == "run_sosl_search":
+        return sfmcpimpl.run_sosl_search_impl(sf_client, arguments)
+    elif name == "get_object_fields":
+        return sfmcpimpl.get_object_fields_impl(sf_client, arguments)
+    elif name == "create_record":
+        return sfmcpimpl.create_record_impl(sf_client, arguments)
+    elif name == "update_record":
+        return sfmcpimpl.update_record_impl(sf_client, arguments)
+    elif name == "delete_record":
+        return sfmcpimpl.delete_record_impl(sf_client, arguments)
+    elif name == "describe_object":
+        return sfmcpimpl.describe_object_impl(sf_client, arguments)
+        
     else:
         raise ValueError(f"Unknown tool: {name}")
 

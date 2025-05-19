@@ -423,4 +423,75 @@ def delete_record_impl(sf_client: OrgHandler, arguments: dict[str, str]):
     except Exception as e:
         return [types.TextContent(type="text", text=f"Error deleting {object_name} record {record_id}: {e}")]
 
+def describe_object_impl(sf_client: OrgHandler, arguments: dict[str, Any]):
+    """
+    Get detailed schema information for a Salesforce object, formatted as markdown.
+    Args:
+        sf_client: OrgHandler instance with an active Salesforce connection
+        arguments: dict with keys:
+            - object_name (str): API name of the object (e.g., 'Account')
+            - include_field_details (bool, optional): Whether to include detailed field info (default True)
+    Returns:
+        List with a single types.TextContent containing the markdown schema description or error message.
+    """
+    object_name = arguments.get("object_name")
+    include_field_details = arguments.get("include_field_details", True)
+    if not object_name:
+        return [types.TextContent(type="text", text="Missing 'object_name' argument")]  
+    if not sf_client.connection:
+        return [types.TextContent(type="text", text="Salesforce connection not established.")]
+    try:
+        sf_object = getattr(sf_client.connection, object_name)
+        describe = sf_object.describe()
+        # Basic object info
+        result = f"## {describe['label']} ({describe['name']})\n\n"
+        result += f"**Type:** {'Custom Object' if describe.get('custom') else 'Standard Object'}\n"
+        result += f"**API Name:** {describe['name']}\n"
+        result += f"**Label:** {describe['label']}\n"
+        result += f"**Plural Label:** {describe.get('labelPlural', '')}\n"
+        result += f"**Key Prefix:** {describe.get('keyPrefix', 'N/A')}\n"
+        result += f"**Createable:** {describe.get('createable')}\n"
+        result += f"**Updateable:** {describe.get('updateable')}\n"
+        result += f"**Deletable:** {describe.get('deletable')}\n\n"
+        if include_field_details:
+            # Fields table
+            result += "## Fields\n\n"
+            result += "| API Name | Label | Type | Required | Unique | External ID |\n"
+            result += "|----------|-------|------|----------|--------|------------|\n"
+            for field in describe["fields"]:
+                required = "Yes" if not field.get("nillable", True) else "No"
+                unique = "Yes" if field.get("unique", False) else "No"
+                external_id = "Yes" if field.get("externalId", False) else "No"
+                result += f"| {field['name']} | {field['label']} | {field['type']} | {required} | {unique} | {external_id} |\n"
+            # Relationship fields
+            reference_fields = [
+                f for f in describe["fields"] if f["type"] == "reference" and f.get("referenceTo")
+            ]
+            if reference_fields:
+                result += "\n## Relationship Fields\n\n"
+                result += "| API Name | Related To | Relationship Name |\n"
+                result += "|----------|-----------|-------------------|\n"
+                for field in reference_fields:
+                    related_to = ", ".join(field["referenceTo"])
+                    rel_name = field.get("relationshipName", "N/A")
+                    result += f"| {field['name']} | {related_to} | {rel_name} |\n"
+            # Picklist fields
+            picklist_fields = [
+                f for f in describe["fields"]
+                if f["type"] in ("picklist", "multipicklist") and f.get("picklistValues")
+            ]
+            if picklist_fields:
+                result += "\n## Picklist Fields\n\n"
+                for field in picklist_fields:
+                    result += f"### {field['label']} ({field['name']})\n\n"
+                    result += "| Value | Label | Default |\n"
+                    result += "|-------|-------|--------|\n"
+                    for value in field["picklistValues"]:
+                        is_default = "Yes" if value.get("defaultValue", False) else "No"
+                        result += f"| {value['value']} | {value['label']} | {is_default} |\n"
+                    result += "\n"
+        return [types.TextContent(type="text", text=result)]
+    except Exception as e:
+        return [types.TextContent(type="text", text=f"Error describing object {object_name}: {str(e)}")]
+
 

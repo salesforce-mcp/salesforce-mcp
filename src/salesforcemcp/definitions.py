@@ -427,6 +427,25 @@ def get_tools():
                 "required": ["object_name", "record_id"]
             }
         ),
+        types.Tool(
+            name="describe_object",
+            description="Get detailed schema information for a Salesforce object, including fields, relationships, and picklist values. Returns markdown.",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "object_name": {
+                        "type": "string",
+                        "description": "API name of the object (e.g., 'Account', 'Custom_Object__c')",
+                    },
+                    "include_field_details": {
+                        "type": "boolean",
+                        "description": "Whether to include detailed field information (default: true)",
+                        "default": True,
+                    },
+                },
+                "required": ["object_name"],
+            },
+        ),
     ]
     
     return tools
