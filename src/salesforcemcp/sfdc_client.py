@@ -1,3 +1,4 @@
+import json
 import shutil
 import os
 import base64
@@ -428,7 +429,6 @@ def create_custom_app_package(json_obj):
         return
 
 def create_metadata_package(json_obj):
-
     try:
         name = json_obj["name"]
         plural_name = json_obj["plural_name"]
@@ -455,6 +455,7 @@ def create_metadata_package(json_obj):
             field_tmpl = file.read()
 
         fields_str = ""
+        field_names = []  # Track field names for profile permissions
 
         for field in fields:
             type_def = ""
@@ -462,16 +463,29 @@ def create_metadata_package(json_obj):
             f_name = field["label"]
             f_type = field["type"]
             f_api_name = field["api_name"]
+            field_names.append(f_api_name)  # Add field name to list
 
             with open(f"{BASE_PATH}/check.txt", 'a') as f:
                 f.write("1")
 
             if f_type == "Text":
-                type_def = """<type>Text</type>
-                    <length>100</length>"""
+                type_def = """<type>Text</type>\n                    <length>100</length>"""
+            elif f_type == "URL":
+                type_def = "<type>Url</type>"
+            elif f_type == "Checkbox":
+                default_val = field.get("defaultValue", False)
+                type_def = f"<type>Checkbox</type>\n                    <defaultValue>{str(default_val).lower()}</defaultValue>"
+            elif f_type == "Lookup":
+                reference_to = field.get("referenceTo", "")
+                relationship_label = field.get("relationshipLabel", "")
+                relationship_name = field.get("relationshipName", "")
+                type_def = f"<type>Lookup</type>\n                    <referenceTo>{reference_to}</referenceTo>"
+                if relationship_label:
+                    type_def += f"\n                    <relationshipLabel>{relationship_label}</relationshipLabel>"
+                if relationship_name:
+                    type_def += f"\n                    <relationshipName>{relationship_name}</relationshipName>"
             else:
                 if f_type == "Picklist":
-
                     with open(f"{BASE_PATH}/check.txt", 'a') as f:
                         f.write("2")
 
@@ -509,13 +523,25 @@ def create_metadata_package(json_obj):
             new_field = new_field.replace("##type##", type_def)
             fields_str = fields_str + new_field
 
-        with open(f"{BASE_PATH}/current/package.xml", "r", encoding="utf-8") as file:
-            pack_tmpl = file.read()
+        with open(f"{BASE_PATH}/fields_str.txt", 'a') as f:
+            f.write(json.dumps(fields_str))
 
-        pack_tmpl = pack_tmpl.replace("##api_name##", api_name)
+        # Update package.xml to include both object and profile
+        package_xml = """<?xml version="1.0" encoding="UTF-8"?>
+<Package xmlns="http://soap.sforce.com/2006/04/metadata">
+    <types>
+        <members>{api_name}</members>
+        <name>CustomObject</name>
+    </types>
+    <types>
+        <members>Admin</members>
+        <name>Profile</name>
+    </types>
+    <version>63.0</version>
+</Package>""".format(api_name=api_name)
 
         with open(f"{BASE_PATH}/current/package.xml", "w", encoding="utf-8") as file:
-            file.write(pack_tmpl)
+            file.write(package_xml)
 
         obj_path = f"{BASE_PATH}/current/objects/{api_name}.object"
 
@@ -533,11 +559,34 @@ def create_metadata_package(json_obj):
         with open(obj_path, "w", encoding="utf-8") as file:
             file.write(obj_tmpl)
 
+        # Create profiles directory in the deployment package
+        profiles_dir = os.path.join(f"{BASE_PATH}/current", "profiles")
+        os.makedirs(profiles_dir, exist_ok=True)
+
+        # Create field permissions XML
+        field_permissions = ""
+        for field in field_names:
+            field_permissions += f"""    <fieldPermissions>
+        <editable>true</editable>
+        <field>{api_name}.{field}</field>
+        <readable>true</readable>
+    </fieldPermissions>
+"""
+
+        # Create profile XML using template
+        with open(os.path.join(BASE_PATH, "assets", "profile.tmpl"), "r", encoding="utf-8") as f:
+            profile_template = f.read()
+
+        profile_xml = profile_template.replace("##fieldPermissions##", field_permissions)
+
+        # Write profile XML
+        with open(os.path.join(profiles_dir, "Admin.profile"), "w", encoding="utf-8") as f:
+            f.write(profile_xml)
+
     except Exception as e:
         err_msg = f"An error occurred: {e}"
         with open(f"{BASE_PATH}/check.txt", 'a') as f:
             f.write(err_msg)
-
 
 def create_custom_metadata_type_package(json_obj):
     """Prepares the deployment package for a new Custom Metadata Type."""
@@ -649,3 +698,53 @@ def deploy_package_from_deploy_dir(sf):
     # Encode and deploy
     b64 = binary_to_base64(zip_path)
     deploy(b64, sf)
+
+def create_profile_permissions_package(object_name: str, fields: list):
+    """Creates a package to update the System Administrator profile with field permissions.
+    Preserves existing permissions while adding new ones.
+    
+    Args:
+        object_name (str): The API name of the object
+        fields (list): List of field API names to grant permissions for
+    """
+    # Clean and prepare deploy directory
+    _clean_deploy_dir()
+    
+    # Create profiles directory
+    deploy_dir = os.path.join(BASE_PATH, DEPLOY_DIR)
+    profiles_dir = os.path.join(deploy_dir, "profiles")
+    os.makedirs(profiles_dir, exist_ok=True)
+    
+    # Create package.xml
+    package_xml = """<?xml version="1.0" encoding="UTF-8"?>
+<Package xmlns="http://soap.sforce.com/2006/04/metadata">
+    <types>
+        <members>Admin</members>
+        <name>Profile</name>
+    </types>
+    <version>63.0</version>
+</Package>"""
+    
+    with open(os.path.join(deploy_dir, "package.xml"), "w", encoding="utf-8") as f:
+        f.write(package_xml)
+    
+    # Create new field permissions XML
+    new_field_permissions = ""
+    for field in fields:
+        new_field_permissions += f"""    <fieldPermissions>
+        <editable>true</editable>
+        <field>{object_name}.{field}</field>
+        <readable>true</readable>
+    </fieldPermissions>
+"""
+    
+    # Read the profile template
+    with open(os.path.join(BASE_PATH, "assets", "profile.tmpl"), "r", encoding="utf-8") as f:
+        profile_template = f.read()
+    
+    # Replace the fieldPermissions placeholder with our new permissions
+    profile_xml = profile_template.replace("##fieldPermissions##", new_field_permissions)
+    
+    # Write profile XML
+    with open(os.path.join(profiles_dir, "Admin.profile"), "w", encoding="utf-8") as f:
+        f.write(profile_xml)
