@@ -150,12 +150,11 @@ Replace the placeholder values with your Salesforce credentials:
 | Tool Name                   | Description                                              | Required Input Fields (typical)                        | Ready |
 |-----------------------------|----------------------------------------------------------|--------------------------------------------------------|--------|
 | create_validation_rule      | Creates a new Validation Rule on a specific object       | object_name, rule_name, error_condition_formula, error_message | ⬜     |
-| create_custom_metadata_type | Creates a new Custom Metadata Type                       | api_name, label, plural_name, fields                   | ⬜     |
+| create_custom_metadata_type | Creates a new Custom Metadata Type                       | api_name, label, plural_name, fields                   | ✅     |
 | create_report               | Creates or updates a Salesforce report                   | report_name, folder_name, report_type, columns         | ⬜     |
 | create_dashboard            | Creates a new Dashboard in Salesforce                    | dashboard_name, folder_name, components                | ⬜     |
 | create_report_type          | Creates a new Custom Report Type                         | developer_name, label, description, base_object, category, deployed | ⬜     |
-| create_full_app             | Creates a full Salesforce application (custom app)       | api_name, label, tabs                                  | ⬜     |
-| describe_object_with_api    | Describes a full Salesforce object                       | api_name                                               | ⬜     |
+| describe_object_with_api    | Describes a full Salesforce object                       | api_name                                               | ✅     |
 | describe_relationship_fields| Detailed info about all relationship fields for an object|                                                        | ⬜     |
 | manage_debug_logs           | Manage debug logs for Salesforce users - enable, disable, or retrieve logs |                                                | ⬜     |
 
