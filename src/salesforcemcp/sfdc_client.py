@@ -359,14 +359,16 @@ def create_tab_package(json_obj):
     with open(package_path, "w", encoding="utf-8") as f:
         f.write(package_xml.replace("##tab_api_name##", tab_api_name))
 
-
-
 def create_custom_app_package(json_obj):
     """Prepares a package to deploy a single Custom Application.
 
     Args:
         json_obj (dict): Contains app parameters like api_name, label, nav_type, tabs, etc.
     """
+
+    with open(f"{BASE_PATH}/check.txt", "w", encoding="utf-8") as f:
+        f.write(f"paso por aqui")
+
     # Extract parameters
     api_name = json_obj.get("api_name")
     label = json_obj.get("label")
@@ -390,6 +392,9 @@ def create_custom_app_package(json_obj):
     if not isinstance(form_factors, list) or not all(f in ["Small", "Large"] for f in form_factors):
         print("Warning: Invalid form_factors. Defaulting to ['Small', 'Large'].")
         form_factors = ["Small", "Large"]
+    if setup_experience not in ["all", "none"]:
+        print(f"Warning: Invalid setup_experience '{setup_experience}'. Defaulting to 'all'.")
+        setup_experience = "all"
 
     # --- Prepare environment --- 
     try:
@@ -405,6 +410,8 @@ def create_custom_app_package(json_obj):
     try:
         shutil.copytree(source_tmpl_dir, destination)
     except Exception as e:
+        with open(f"{BASE_PATH}/check.txt", "w", encoding="utf-8") as f:
+            f.write(f"{e}")
         print(f"Error copying template directory: {e}")
         return
         
@@ -416,20 +423,27 @@ def create_custom_app_package(json_obj):
         os.makedirs(os.path.dirname(new_app_file), exist_ok=True) 
         os.rename(old_app_file, new_app_file)
     except OSError as e:
+        with open(f"{BASE_PATH}/check.txt", "w", encoding="utf-8") as f:
+            f.write(f"{e}")
         print(f"Error renaming app template file: {e}")
         return
         
-    # --- Update package.xml --- 
-    package_path = f"{destination}/package.xml"
-    try:
-        with open(package_path, "r", encoding="utf-8") as file:
-            pack_tmpl = file.read()
-        pack_tmpl = pack_tmpl.replace("##api_name##", api_name)
-        with open(package_path, "w", encoding="utf-8") as file:
-            file.write(pack_tmpl)
-    except Exception as e:
-        print(f"Error processing package.xml: {e}")
-        return
+    # --- Update package.xml to include Profile --- 
+    package_xml = """<?xml version="1.0" encoding="UTF-8"?>
+<Package xmlns="http://soap.sforce.com/2006/04/metadata">
+    <types>
+        <members>{api_name}</members>
+        <name>CustomApplication</name>
+    </types>
+    <types>
+        <members>Admin</members>
+        <name>Profile</name>
+    </types>
+    <version>63.0</version>
+</Package>""".format(api_name=api_name)
+
+    with open(os.path.join(destination, "package.xml"), "w", encoding="utf-8") as f:
+        f.write(package_xml)
         
     # --- Prepare App XML using Template --- 
     try:
@@ -438,9 +452,13 @@ def create_custom_app_package(json_obj):
             
         # Replace simple placeholders
         app_tmpl = app_tmpl.replace("##label##", label)
-        app_tmpl = app_tmpl.replace("##nav_type##", nav_type)
-        app_tmpl = app_tmpl.replace("##description##", description)
-        app_tmpl = app_tmpl.replace("##setup_experience##", setup_experience)
+        app_tmpl = app_tmpl.replace("##description##", api_name)
+        
+        # Set navType based on the provided value
+        app_tmpl = app_tmpl.replace("<navType>Standard</navType>", f"<navType>{nav_type}</navType>")
+        
+        # Set setupExperience based on the provided value
+        app_tmpl = app_tmpl.replace("<setupExperience>all</setupExperience>", f"<setupExperience>{setup_experience}</setupExperience>")
         
         # Generate brand XML (optional)
         brand_xml = ""
@@ -449,8 +467,9 @@ def create_custom_app_package(json_obj):
              brand_xml = f"    <brand>\n        <headerColor>{header_color}</headerColor>\n        <shouldOverrideOrgTheme>true</shouldOverrideOrgTheme>\n    </brand>"
         app_tmpl = app_tmpl.replace("<!-- ##brand_placeholder## -->", brand_xml)
         
-        # Generate form factors XML
+        # Generate form factors XML - ensure it's properly placed in the XML structure
         form_factors_xml = "\n".join([f"    <formFactors>{ff}</formFactors>" for ff in form_factors])
+        # Remove the placeholder comment and add the form factors
         app_tmpl = app_tmpl.replace("<!-- ##form_factors_placeholder## -->", form_factors_xml)
         
         # Generate tabs XML
@@ -464,9 +483,40 @@ def create_custom_app_package(json_obj):
         with open(new_app_file, "w", encoding="utf-8") as file:
             file.write(app_tmpl)
         print(f"Custom App XML generated and written to: {new_app_file}")
+
+        # Create profiles directory with proper structure
+        profiles_dir = os.path.join(destination, "profiles")
+        os.makedirs(profiles_dir, exist_ok=True)
+
+        # Create application permissions XML
+        app_permissions = f"""    <applicationVisibilities>
+        <application>{api_name}</application>
+        <default>true</default>
+        <visible>true</visible>
+    </applicationVisibilities>
+"""
+
+        # Read the profile template
+        with open(os.path.join(BASE_PATH, "assets", "profile.tmpl"), "r", encoding="utf-8") as f:
+            profile_template = f.read()
+
+        # Add application permissions to the profile
+        profile_xml = profile_template.replace("##fieldPermissions##", "")
+        profile_xml = profile_xml.replace("##objectPermissions##", "")
+        profile_xml = profile_xml.replace("</Profile>", f"{app_permissions}</Profile>")
+
+        # Write profile XML with proper name
+        profile_file = os.path.join(profiles_dir, "Admin.profile-meta.xml")
+        with open(profile_file, "w", encoding="utf-8") as f:
+            f.write(profile_xml)
             
+        with open(f"{BASE_PATH}/check.txt", "w", encoding="utf-8") as f:
+            f.write(f"OK")
+
     except Exception as e:
         print(f"Error processing app template or writing file: {e}")
+        with open(f"{BASE_PATH}/check.txt", "w", encoding="utf-8") as f:
+            f.write(f"{e}")
         return
 
 def create_metadata_package(json_obj):

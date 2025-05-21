@@ -184,47 +184,61 @@ def create_custom_metadata_type_impl(sf_client: sfdc_client.OrgHandler, argument
     sfdc_client.deploy_package_from_deploy_dir(sf_client.connection)
     return [types.TextContent(type="text", text=f"Custom Metadata Type '{api_name}' creation package prepared and deployment initiated.")]
 
-def create_custom_app_impl(sf_client: sfdc_client.OrgHandler, arguments: dict[str, str]):
-        api_name = arguments.get("api_name")
-        label = arguments.get("label")
-        nav_type = arguments.get("nav_type", "Standard")
-        tabs = arguments.get("tabs")
-        description = arguments.get("description")
-        header_color = arguments.get("header_color")
-        form_factors = arguments.get("form_factors", ["Small", "Large"])
-        setup_experience = arguments.get("setup_experience", "all")
+def create_custom_app_impl(sf_client: OrgHandler, arguments: dict[str, str]):
+    """
+    Creates a new custom application and optionally assigns visibility to specified profiles.
+    Arguments:
+        api_name: API name of the app
+        label: Label for the app
+        nav_type: Navigation type
+        tabs: List of tab API names
+        description: App description
+        header_color: Header color
+        form_factors: List of form factors
+        setup_experience: Setup experience
+        visible_profiles: (optional) List of profile API names to grant app visibility
+    """
+    api_name = arguments.get("api_name")
+    label = arguments.get("label")
+    nav_type = arguments.get("nav_type", "Standard")
+    tabs = arguments.get("tabs")
+    description = arguments.get("description")
+    header_color = arguments.get("header_color")
+    form_factors = arguments.get("form_factors", ["Small", "Large"])
+    setup_experience = arguments.get("setup_experience", "all")
+    visible_profiles = arguments.get("visible_profiles", [])
 
-        if not all([api_name, label, isinstance(tabs, list)]):
-             raise ValueError("Missing required arguments: api_name, label, tabs (must be a list)")
-        if not api_name.replace("_", "").isalnum() or " " in api_name:
-             raise ValueError(f"Invalid api_name: '{api_name}'. Use only letters, numbers, and underscores.")
-             
-        json_obj = {
-            "api_name": api_name,
-            "label": label,
-            "nav_type": nav_type,
-            "tabs": tabs,
-            "description": description,
-            "header_color": header_color,
-            "form_factors": form_factors,
-            "setup_experience": setup_experience
-        }
+    if not all([api_name, label, isinstance(tabs, list)]):
+        raise ValueError("Missing required arguments: api_name, label, tabs (must be a list)")
+    if not api_name.replace("_", "").isalnum() or " " in api_name:
+        raise ValueError(f"Invalid api_name: '{api_name}'. Use only letters, numbers, and underscores.")
 
-        if not sf_client.connection:
-            raise ValueError("Salesforce connection is not active. Cannot perform metadata deployment.")
+    json_obj = {
+        "api_name": api_name,
+        "label": label,
+        "nav_type": nav_type,
+        "tabs": tabs,
+        "description": description,
+        "header_color": header_color,
+        "form_factors": form_factors,
+        "setup_experience": setup_experience
+    }
 
-        try:
-            sfdc_client.create_custom_app_package(json_obj)
-            sfdc_client.create_send_to_server(sf_client.connection)
-            return [
-                types.TextContent(
-                    type="text",
-                    text=f"Custom Application '{api_name}' creation package prepared and deployment initiated."
-                )
-            ]
-        except Exception as e:
-            print(f"Error during Custom Application creation/deployment: {e}")
-            raise ValueError(f"Failed to create or deploy Custom Application '{api_name}'. Error: {str(e)}")
+    if not sf_client.connection:
+        raise ValueError("Salesforce connection is not active. Cannot perform metadata deployment.")
+
+    try:
+        sfdc_client.create_custom_app_package(json_obj)
+        sfdc_client.create_send_to_server(sf_client.connection)
+        return [
+            types.TextContent(
+                type="text",
+                text=f"Custom Application '{api_name}' creation package prepared and deployment initiated."
+            )
+        ]
+    except Exception as e:
+        print(f"Error during Custom Application creation/deployment: {e}")
+        raise ValueError(f"Failed to create or deploy Custom Application '{api_name}'. Error: {str(e)}")
 
 def create_report_folder_impl(sf_client: sfdc_client.OrgHandler, arguments: dict[str, str]):
     """Creates a new Salesforce report folder by inserting a Folder record via the REST API."""
