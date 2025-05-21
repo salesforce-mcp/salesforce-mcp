@@ -494,4 +494,53 @@ def describe_object_impl(sf_client: OrgHandler, arguments: dict[str, Any]):
     except Exception as e:
         return [types.TextContent(type="text", text=f"Error describing object {object_name}: {str(e)}")]
 
+def define_tabs_on_app_impl(sf_client: OrgHandler, arguments: dict[str, Any]):
+    """
+    Defines or updates the tabs for an existing Lightning app.
+    
+    Args:
+        sf_client: OrgHandler instance with an active Salesforce connection
+        arguments: dict with keys:
+            - app_api_name (str): API name of the existing app
+            - tabs (list): List of tab API names to include in the app
+            - append (bool, optional): If True, append to existing tabs. If False, replace existing tabs.
+    """
+    app_api_name = arguments.get("app_api_name")
+    tabs = arguments.get("tabs")
+    append = arguments.get("append", False)
 
+    if not app_api_name or not isinstance(tabs, list):
+        raise ValueError("Missing required arguments: app_api_name and tabs (must be a list)")
+
+    if not sf_client.connection:
+        raise ValueError("Salesforce connection is not active. Cannot update app tabs.")
+
+    try:
+        # First, retrieve the current app metadata
+        mdapi = sf_client.connection.mdapi
+        app_metadata = mdapi.CustomApplication.read(app_api_name)
+        
+        if not app_metadata:
+            raise ValueError(f"App '{app_api_name}' not found")
+
+        # Get current tabs if appending
+        current_tabs = []
+        if append and hasattr(app_metadata, 'tabs'):
+            current_tabs = app_metadata.tabs
+
+        # Combine or replace tabs
+        new_tabs = current_tabs + tabs if append else tabs
+
+        # Update the app metadata
+        app_metadata.tabs = new_tabs
+        mdapi.CustomApplication.update(app_metadata)
+
+        return [
+            types.TextContent(
+                type="text",
+                text=f"Successfully updated tabs for app '{app_api_name}'. New tab configuration: {', '.join(new_tabs)}"
+            )
+        ]
+
+    except Exception as e:
+        raise ValueError(f"Error updating app tabs: {str(e)}")
