@@ -2,13 +2,14 @@
 <CustomApplication xmlns="http://soap.sforce.com/2006/04/metadata">
     <!-- ##brand_placeholder## -->
     <description>##description##</description>
-    <!-- ##form_factors_placeholder## -->
-    <isNavAutoTempTabsDisabled>false</isNavAutoTempTabsDisabled> <!-- Default -->
-    <isNavPersonalizationDisabled>false</isNavPersonalizationDisabled> <!-- Default -->
+    <formFactors>Small</formFactors>
+    <formFactors>Large</formFactors>
+    <isNavAutoTempTabsDisabled>false</isNavAutoTempTabsDisabled>
+    <isNavPersonalizationDisabled>false</isNavPersonalizationDisabled>
     <label>##label##</label>
-    <navType>##nav_type##</navType>
+    <navType>Standard</navType>
     <!-- ##tabs_placeholder## -->
-    <setupExperience>##setup_experience##</setupExperience> <!-- Default set in code -->
-    <uiType>Lightning</uiType> <!-- Hardcoded -->
+    <setupExperience>all</setupExperience>
+    <uiType>Lightning</uiType>
     <!-- ActionOverrides and ProfileActionOverrides omitted for simplicity -->
 </CustomApplication> 

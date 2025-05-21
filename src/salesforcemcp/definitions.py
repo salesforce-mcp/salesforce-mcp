@@ -210,7 +210,7 @@ def get_tools():
                     },
                     "label": {
                         "type": "string",
-                        "description": "The display label for the application shown to users."
+                        "description": "The display label for the application shown to users. Provide always a value for this field"
                     },
                     "nav_type": {
                         "type": "string",
