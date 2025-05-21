@@ -32,9 +32,12 @@ class OrgHandler:
         """
         try:
             self.connection = Salesforce(
-                username=os.getenv("USERNAME"),
-                password=os.getenv("PASSWORD"),
-                security_token=os.getenv("SECURITY_TOKEN")
+                # username=os.getenv("USERNAME"),
+                # password=os.getenv("PASSWORD"),
+                # security_token=os.getenv("SECURITY_TOKEN")
+                username="jsuarez@demo.model.com",
+                password="Welcome12345",
+                security_token=""
             )
             return True
         except Exception as e:
@@ -308,17 +311,55 @@ def create_tab_package(json_obj):
 
     # --- Write Constructed XML to File --- 
     try:
-        # --- Add Debug Print --- 
-        print("--- Writing Tab Meta XML ---")
-        print(final_xml_content)
-        print("--- End Tab Meta XML ---")
-        # --- End Debug Print ---
         with open(new_tab_meta_name, "w", encoding="utf-8") as file:
             file.write(final_xml_content)
     except Exception as e:
         print(f"Error writing .tab-meta.xml file: {e}")
         return
     # --- End Write XML ---
+
+    # --- Create or Update Profile with Tab Visibility ---
+    profiles_dir = os.path.join(destination, "profiles")
+    os.makedirs(profiles_dir, exist_ok=True)
+    profile_file = os.path.join(profiles_dir, "Admin.profile-meta.xml")
+
+    tab_visibility_xml = f"""    <tabVisibilities>\n        <tab>{tab_api_name}</tab>\n        <visibility>DefaultOn</visibility>\n    </tabVisibilities>\n"""
+
+    if os.path.exists(profile_file):
+        # Parse and append if not already present
+        tree = ET.parse(profile_file)
+        root = tree.getroot()
+        ns = {'sf': 'http://soap.sforce.com/2006/04/metadata'}
+        # Register namespace for writing
+        ET.register_namespace('', 'http://soap.sforce.com/2006/04/metadata')
+        exists = any(
+            tv.find('tab').text == tab_api_name
+            for tv in root.findall('sf:tabVisibilities', ns)
+            if tv.find('tab') is not None
+        )
+        if not exists:
+            tab_vis = ET.SubElement(root, 'tabVisibilities')
+            tab = ET.SubElement(tab_vis, 'tab')
+            tab.text = tab_api_name
+            vis = ET.SubElement(tab_vis, 'visibility')
+            vis.text = 'DefaultOn'
+            tree.write(profile_file, encoding='utf-8', xml_declaration=True)
+    else:
+        # Use template as before
+        with open(os.path.join(BASE_PATH, "assets", "profile.tmpl"), "r", encoding="utf-8") as f:
+            profile_template = f.read()
+        profile_xml = profile_template.replace("##fieldPermissions##", "")
+        profile_xml = profile_xml.replace("##tabVisibilities##", tab_visibility_xml)
+        with open(profile_file, "w", encoding="utf-8") as f:
+            f.write(profile_xml)
+
+    # Update package.xml to include profile
+    package_xml = """<?xml version="1.0" encoding="UTF-8"?>\n<Package xmlns="http://soap.sforce.com/2006/04/metadata">\n    <types>\n        <members>##tab_api_name##</members>\n        <name>CustomTab</name>\n    </types>\n    <types>\n        <members>Admin</members>\n        <name>Profile</name>\n    </types>\n    <version>58.0</version>\n</Package>"""
+
+    with open(package_path, "w", encoding="utf-8") as f:
+        f.write(package_xml.replace("##tab_api_name##", tab_api_name))
+
+
 
 def create_custom_app_package(json_obj):
     """Prepares a package to deploy a single Custom Application.

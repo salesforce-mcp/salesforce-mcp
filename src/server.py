@@ -52,6 +52,8 @@ async def handle_call_tool(name: str, arguments: dict[str, str]) -> list[types.T
         return sfmcpimpl.create_custom_metadata_type_impl(sf_client, arguments)
     elif name == "create_tab":
         return sfmcpimpl.create_tab_impl(sf_client, arguments)
+    elif name == "define_tabs_on_app":
+        return sfmcpimpl.define_tabs_on_app_impl(sf_client, arguments)
     elif name == "create_custom_app":
         return sfmcpimpl.create_custom_app_impl(sf_client, arguments)
     elif name == "create_report_folder":
