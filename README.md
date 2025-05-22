@@ -113,6 +113,7 @@ Then, to use this connector locally, you'll need to configure it in your `claude
             }
         }
     }
+}
 ```
 
 Make sure to point to the local directory where the repo has been cloned and change that value for the **REPO_CLONE_PATH** 
