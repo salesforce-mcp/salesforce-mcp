@@ -446,6 +446,24 @@ def get_tools():
                 "required": ["object_name"],
             },
         ),
+        types.Tool(
+            name="create_lightning_page",
+            description="Creates a new Lightning App Page in Salesforce.",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "label": {
+                        "type": "string",
+                        "description": "The display label for the page."
+                    },
+                    "description": {
+                        "type": "string",
+                        "description": "Optional description for the Lightning Page."
+                    }
+                },
+                "required": ["label"]
+            }
+        ),
     ]
     
     return tools

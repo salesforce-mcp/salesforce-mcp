@@ -308,6 +308,19 @@ def create_dashboard_folder_impl(sf_client: sfdc_client.OrgHandler, arguments: d
     except Exception as e:
         raise ValueError(f"Unexpected error creating dashboard folder: {e}")
 
+def create_lightning_page_impl(sf_client, arguments):
+    """Creates a new Lightning App Page in Salesforce with a unique name."""
+    try:
+        page_label = arguments.get("label", "Simple Lightning App Page")
+        description = arguments.get("description", "")
+        ok = sfdc_client.deploy_lightning_page(page_label, description)
+        if not ok:
+            return [types.TextContent(type="text", text="Failed to create Lightning Page package.")]
+        sfdc_client.deploy_package_from_deploy_dir(sf_client.connection)
+        return [types.TextContent(type="text", text=f"Successfully created new Lightning App Page with label: {page_label}!")]
+    except Exception as e:
+        return [types.TextContent(type="text", text=f"Error creating Lightning App Page: {str(e)}")]
+
 # --- Data Operations ---
 
 def run_soql_query_impl(sf_client: OrgHandler, arguments: dict[str, str]):
