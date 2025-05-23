@@ -839,3 +839,51 @@ def create_profile_permissions_package(object_name: str, fields: list):
     # Write profile XML
     with open(os.path.join(profiles_dir, "Admin.profile"), "w", encoding="utf-8") as f:
         f.write(profile_xml)
+
+def deploy_hardcoded_lightning_page(page_label="Simple Lightning App Page", description=""):
+    """Creates a new Lightning Page with a unique name based on the provided label.
+    
+    Args:
+        page_label (str): The label for the Lightning Page
+        description (str): Optional description for the Lightning Page
+    """
+    try:
+        _clean_deploy_dir()
+        # Generate a unique API name from the label
+        api_name = page_label.replace(" ", "_") + "_" + str(int(time.time()))
+        
+        asset_path = os.path.join(BASE_PATH, "assets", "Flexipages", "HardcodedPage.flexipage")
+        with open(asset_path, "r", encoding="utf-8") as asset_file:
+            flexipage_xml = asset_file.read()
+        
+        # Replace the placeholders
+        flexipage_xml = flexipage_xml.replace("##PAGE_LABEL##", page_label)
+        flexipage_xml = flexipage_xml.replace("##PAGE_DESCRIPTION##", description)
+        
+        flexipage_dir = os.path.join(BASE_PATH, DEPLOY_DIR, "flexipages")
+        os.makedirs(flexipage_dir, exist_ok=True)
+        
+        # Use the unique API name for the file
+        flexipage_path = os.path.join(flexipage_dir, f"{api_name}.flexipage")
+        with open(flexipage_path, "w", encoding="utf-8") as f:
+            f.write(flexipage_xml)
+            
+        # Update package.xml to use the unique API name
+        package_xml = f'''<?xml version="1.0" encoding="UTF-8"?>
+<Package xmlns="http://soap.sforce.com/2006/04/metadata">
+    <types>
+        <members>{api_name}</members>
+        <name>FlexiPage</name>
+    </types>
+    <version>63.0</version>
+</Package>'''
+        
+        package_path = os.path.join(BASE_PATH, DEPLOY_DIR, "package.xml")
+        with open(package_path, "w", encoding="utf-8") as f:
+            f.write(package_xml)
+            
+        write_to_file(f"Created new Lightning page with API name: {api_name}")
+        return True
+    except Exception as e:
+        write_to_file(f"Error creating Lightning page package: {str(e)}")
+        return False
