@@ -58,6 +58,8 @@ async def handle_call_tool(name: str, arguments: dict[str, str]) -> list[types.T
         return sfmcpimpl.create_custom_app_impl(sf_client, arguments)
     elif name == "create_report_folder":
         return sfmcpimpl.create_report_folder_impl(sf_client, arguments)
+    elif name == "create_lightning_page":
+        return sfmcpimpl.create_lightning_page_impl(sf_client, arguments)
     elif name == "create_dashboard_folder":
         return sfmcpimpl.create_dashboard_folder_impl(sf_client, arguments)
 
