@@ -840,7 +840,7 @@ def create_profile_permissions_package(object_name: str, fields: list):
     with open(os.path.join(profiles_dir, "Admin.profile"), "w", encoding="utf-8") as f:
         f.write(profile_xml)
 
-def deploy_hardcoded_lightning_page(page_label="Simple Lightning App Page", description=""):
+def deploy_lightning_page(page_label="Simple Lightning App Page", description=""):
     """Creates a new Lightning Page with a unique name based on the provided label.
     
     Args:
@@ -857,8 +857,8 @@ def deploy_hardcoded_lightning_page(page_label="Simple Lightning App Page", desc
             flexipage_xml = asset_file.read()
         
         # Replace the placeholders
-        flexipage_xml = flexipage_xml.replace("##PAGE_LABEL##", page_label)
-        flexipage_xml = flexipage_xml.replace("##PAGE_DESCRIPTION##", description)
+        flexipage_xml = flexipage_xml.replace("##page_label##", page_label)
+        flexipage_xml = flexipage_xml.replace("##page_description##", description)
         
         flexipage_dir = os.path.join(BASE_PATH, DEPLOY_DIR, "flexipages")
         os.makedirs(flexipage_dir, exist_ok=True)

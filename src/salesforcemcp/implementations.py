@@ -315,7 +315,7 @@ def create_lightning_page_impl(sf_client, arguments):
     try:
         page_label = arguments.get("label", "Simple Lightning App Page")
         description = arguments.get("description", "")
-        ok = metadata_service.deploy_hardcoded_lightning_page(page_label, description)
+        ok = metadata_service.deploy_lightning_page(page_label, description)
         if not ok:
             return [types.TextContent(type="text", text="Failed to create Lightning Page package.")]
         metadata_service.deploy_package_from_deploy_dir(sf_client.connection)

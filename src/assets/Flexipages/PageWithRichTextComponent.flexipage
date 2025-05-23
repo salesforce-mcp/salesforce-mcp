@@ -27,7 +27,7 @@
         <name>region3</name>
         <type>Region</type>
     </flexiPageRegions>
-    <masterLabel>##PAGE_LABEL##</masterLabel>
+    <masterLabel>##page_label##</masterLabel>
     <template>
         <name>flexipage:appHomeTemplateHeaderTwoColumnsLeftSidebar</name>
     </template>

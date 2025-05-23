@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <FlexiPage xmlns="http://soap.sforce.com/2006/04/metadata">
-<description>##PAGE_DESCRIPTION##</description>
+<description>##page_description##</description>
     <flexiPageRegions>
         <name>region1</name>
         <type>Region</type>
@@ -13,7 +13,7 @@
         <name>region3</name>
         <type>Region</type>
     </flexiPageRegions>
-    <masterLabel>##PAGE_LABEL##</masterLabel>
+    <masterLabel>##page_label##</masterLabel>
     <template>
         <name>flexipage:appHomeTemplateHeaderTwoColumnsLeftSidebar</name>
     </template>
