@@ -113,6 +113,7 @@ Then, to use this connector locally, you'll need to configure it in your `claude
             }
         }
     }
+}
 ```
 
 Make sure to point to the local directory where the repo has been cloned and change that value for the **REPO_CLONE_PATH** 
@@ -136,25 +137,25 @@ Replace the placeholder values with your Salesforce credentials:
 | create_custom_app        | Creates a new Lightning Custom Application                                  | api_name, label, tabs                                  | ✅     |
 | create_report_folder     | Creates a new Report Folder in Salesforce                                   | folder_api_name, folder_label                          | ✅     |
 | create_dashboard_folder  | Creates a new Dashboard Folder in Salesforce                                | folder_api_name, folder_label                          | ✅     |
+| create_lightning_page    | Creates a new empty Lightning Page Salesforce                               | label, description                                     | ✅     |
 | run_soql_query           | Executes a SOQL query against Salesforce                                    | query                                                  | ✅     |
 | run_sosl_search          | Executes a SOSL search against Salesforce                                   | search                                                 | ✅     |
 | get_object_fields        | Retrieves detailed information about the fields of a Salesforce object      | object_name                                            | ✅     |
 | create_record            | Creates a new record for a specified object                                 | object_name, data                                      | ✅     |
 | update_record            | Updates an existing record specified by its ID                              | object_name, record_id, data                           | ✅     |
 | delete_record            | Deletes a record specified by its ID                                        | object_name, record_id                                 | ✅     |
+| create_custom_metadata_type | Creates a new Custom Metadata Type                       | api_name, label, plural_name, fields                   | ✅     |
+| describe_object_with_api    | Describes a full Salesforce object                       | api_name                                               | ✅     |
 
 
-## Coming soon
 ## Coming soon
 
 | Tool Name                   | Description                                              | Required Input Fields (typical)                        | Ready |
 |-----------------------------|----------------------------------------------------------|--------------------------------------------------------|--------|
 | create_validation_rule      | Creates a new Validation Rule on a specific object       | object_name, rule_name, error_condition_formula, error_message | ⬜     |
-| create_custom_metadata_type | Creates a new Custom Metadata Type                       | api_name, label, plural_name, fields                   | ✅     |
 | create_report               | Creates or updates a Salesforce report                   | report_name, folder_name, report_type, columns         | ⬜     |
 | create_dashboard            | Creates a new Dashboard in Salesforce                    | dashboard_name, folder_name, components                | ⬜     |
 | create_report_type          | Creates a new Custom Report Type                         | developer_name, label, description, base_object, category, deployed | ⬜     |
-| describe_object_with_api    | Describes a full Salesforce object                       | api_name                                               | ✅     |
 | describe_relationship_fields| Detailed info about all relationship fields for an object|                                                        | ⬜     |
 | manage_debug_logs           | Manage debug logs for Salesforce users - enable, disable, or retrieve logs |                                                | ⬜     |
 
