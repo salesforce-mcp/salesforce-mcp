@@ -448,7 +448,7 @@ def get_tools():
         ),
         types.Tool(
             name="create_lightning_page",
-            description="Creates a new Lightning App Page in Salesforce (currently always deploys a simple hardcoded page).",
+            description="Creates a new Lightning App Page in Salesforce.",
             inputSchema={
                 "type": "object",
                 "properties": {

@@ -4,8 +4,7 @@ __pycache__/
 *$py.class
 
 # Include specific binary files
-!src/salesforcemcp/__pycache__/implementations.cpython-310.pyc
-!src/salesforcemcp/__pycache__/sfdc_client.cpython-310.pyc
+!src/salesforcemcp/__pycache__/
 
 # Distribution / packaging
 dist/
